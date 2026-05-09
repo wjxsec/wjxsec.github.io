@@ -7,11 +7,14 @@ is designed for GitHub Pages user-site hosting at:
 
 https://wjxsec.github.io
 
+Contact: jiaxi.wang.research@gmail.com
+
 ## Structure
 
 - `index.html` - homepage content
 - `assets/css/styles.css` - responsive academic page styling
 - `assets/img/profile-placeholder.svg` - replaceable profile image placeholder
+- `assets/papers/mmd-power-side-channel-leakage.pdf` - CCF-A paper PDF
 - `.nojekyll` - asks GitHub Pages to serve files as-is
 
 ## Publish
