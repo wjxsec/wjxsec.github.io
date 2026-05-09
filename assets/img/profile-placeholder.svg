@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-labelledby="title desc">
+  <title id="title">Jiaxi Wang profile placeholder</title>
+  <desc id="desc">A minimal academic homepage placeholder with the initials WJX.</desc>
+  <rect width="360" height="360" fill="#f3f6f8"/>
+  <path d="M0 260 C65 220 108 250 162 214 C221 175 271 197 360 148 L360 360 L0 360 Z" fill="#d8e8e3"/>
+  <path d="M0 302 C74 254 138 286 201 244 C262 203 305 225 360 196 L360 360 L0 360 Z" fill="#b8d6cf"/>
+  <circle cx="268" cy="82" r="46" fill="#f3cc7d"/>
+  <circle cx="268" cy="82" r="33" fill="#fff4d9" opacity=".72"/>
+  <rect x="64" y="72" width="232" height="190" rx="8" fill="#ffffff" stroke="#cfd9df" stroke-width="2"/>
+  <path d="M92 122 H268 M92 156 H236 M92 190 H248" stroke="#94a3ad" stroke-width="10" stroke-linecap="round"/>
+  <text x="180" y="242" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700" fill="#115e59">WJX</text>
+</svg>

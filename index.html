@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Jiaxi Wang's academic homepage. Research in AI security, data privacy, black-box privacy auditing, and side-channel leakage analysis.">
+    <meta name="author" content="Jiaxi Wang">
+    <title>Jiaxi Wang | AI Security & Data Privacy</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="Jiaxi Wang homepage">Jiaxi Wang</a>
+        <div class="nav-links">
+          <a href="#about">About</a>
+          <a href="#news">News</a>
+          <a href="#research">Research</a>
+          <a href="#publications">Publications</a>
+          <a href="#background">Background</a>
+          <a href="#service">Service</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main" class="page-shell">
+      <section id="top" class="profile">
+        <div class="profile-photo">
+          <img src="assets/img/profile-placeholder.svg" alt="Jiaxi Wang profile placeholder">
+        </div>
+
+        <div class="profile-body">
+          <p class="eyebrow">AI Security · Data Privacy · Black-Box Auditing</p>
+          <h1>Jiaxi Wang</h1>
+          <p class="subtitle">Prospective Ph.D. applicant working on privacy auditing for deployed LLM systems.</p>
+
+          <ul class="contact-list" aria-label="Contact and links">
+            <li>Beijing, China</li>
+            <li><a href="mailto:saul.goodman.ca@gmail.com">Email</a></li>
+            <li><a href="https://github.com/jiaxi-wang-research">GitHub</a></li>
+            <li><a href="https://wjxsec.github.io">wjxsec.github.io</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="about" class="section">
+        <h2>About Me</h2>
+        <p>
+          My research interests lie in AI security and data privacy, with a focus on
+          black-box privacy auditing of deployed LLM systems. I study what an external
+          auditor or adversary can infer about private artifacts behind such systems:
+          training examples, fine-tuning corpora, proprietary prompts, and agent
+          memory/state, using only API-level observations.
+        </p>
+        <p>
+          My current work focuses on statistically calibrated membership inference under
+          realistic auditing constraints, where reference samples are limited and
+          loss-based baselines often yield unstable or poorly calibrated evidence. I
+          explore integral probability metrics, especially Maximum Mean Discrepancy
+          (MMD), to formulate privacy-leakage detection as a two-sample hypothesis-testing
+          problem.
+        </p>
+        <p>
+          This line of work builds on my prior research on side-channel leakage
+          quantification in cryptographic hardware. More broadly, I am interested in how
+          ideas from classical side-channel analysis, including leakage measurement,
+          distinguishers, statistical confidence, and attack evaluation, can inform
+          modern ML privacy attacks and defenses for trustworthy AI systems.
+        </p>
+      </section>
+
+      <section id="news" class="section">
+        <h2>News</h2>
+        <ul class="news-list">
+          <li>
+            <time datetime="2026-05">May 2026</time>
+            <span>Launched this academic homepage for AI security and data privacy research.</span>
+          </li>
+          <li>
+            <time datetime="2026-04">Apr 2026</time>
+            <span>Started building an MMD-based framework for black-box training-data membership inference in LLMs.</span>
+          </li>
+          <li>
+            <time datetime="2026-03">Mar 2026</time>
+            <span>Extended prior side-channel leakage analysis experience toward statistical privacy auditing for ML systems.</span>
+          </li>
+        </ul>
+      </section>
+
+      <section id="research" class="section">
+        <h2>Research</h2>
+        <div class="research-grid">
+          <article>
+            <h3>Black-Box Privacy Auditing for LLMs</h3>
+            <p>
+              Auditing what can be inferred from deployed LLM systems through API-level
+              observations, including training examples, fine-tuning data, proprietary
+              prompts, and agent memory/state.
+            </p>
+          </article>
+          <article>
+            <h3>Statistically Calibrated Membership Inference</h3>
+            <p>
+              Studying membership evidence under realistic constraints where reference
+              samples are scarce, model internals are hidden, and naive loss-based
+              baselines can be unstable.
+            </p>
+          </article>
+          <article>
+            <h3>Distance-Based Auditing with MMD</h3>
+            <p>
+              Formulating privacy-leakage detection as a two-sample hypothesis-testing
+              problem through integral probability metrics, especially Maximum Mean
+              Discrepancy.
+            </p>
+          </article>
+          <article>
+            <h3>Side-Channel Thinking for ML Privacy</h3>
+            <p>
+              Bringing leakage measurement, distinguishers, confidence estimation, and
+              attack evaluation from classical side-channel analysis into modern ML
+              privacy research.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="publications" class="section">
+        <h2>Publications</h2>
+        <ol class="publication-list">
+          <li>
+            <div class="venue">Manuscript in preparation</div>
+            <p class="paper-title">MMD-Based Training Data Membership Inference for Large Language Models: A Unified Distance Auditing Framework.</p>
+            <p class="authors"><strong>Jiaxi Wang</strong>.</p>
+            <p class="paper-meta">Target venue: USENIX Security. Research code: <a href="https://github.com/jiaxi-wang-research/MMD-LLM-Auditing">MMD-LLM-Auditing</a>.</p>
+          </li>
+          <li>
+            <div class="venue">Prior work</div>
+            <p class="paper-title">Side-Channel Leakage Quantification in Cryptographic Hardware.</p>
+            <p class="authors"><strong>Jiaxi Wang</strong>.</p>
+            <p class="paper-meta"><a href="#" aria-label="Paper link to be added">Paper</a> link to be added.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="background" class="section">
+        <h2>Background</h2>
+        <ul class="timeline">
+          <li>
+            <span class="timeline-date">2026 - Present</span>
+            <span>Independent research on black-box privacy auditing of deployed LLM systems.</span>
+          </li>
+          <li>
+            <span class="timeline-date">Prior</span>
+            <span>Research on side-channel leakage quantification in cryptographic hardware.</span>
+          </li>
+          <li>
+            <span class="timeline-date">Current</span>
+            <span>Prospective Ph.D. applicant interested in AI security, data privacy, and trustworthy AI systems.</span>
+          </li>
+        </ul>
+      </section>
+
+      <section id="service" class="section">
+        <h2>Service & Interests</h2>
+        <ul class="compact-list">
+          <li>Research areas: AI security, data privacy, LLM privacy auditing, side-channel analysis.</li>
+          <li>Topics of interest: training-data extraction, prompt leakage, LLM-agent red-teaming, trustworthy AI defenses.</li>
+          <li>Open to research discussions and collaborations around black-box auditing and statistically grounded privacy evaluation.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 Jiaxi Wang. Last updated May 2026.</p>
+    </footer>
+  </body>
+</html>
