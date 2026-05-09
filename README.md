@@ -7,7 +7,12 @@ is designed for GitHub Pages user-site hosting at:
 
 https://wjxsec.github.io
 
-Contact: jiaxi.wang.research@gmail.com
+## Contact
+
+- Email: jiaxi.wang.research@gmail.com
+- GitHub: https://github.com/wjxsec
+- Google Scholar: https://scholar.google.com/citations?hl=zh-CN&user=foI99V4AAAAJ
+- ORCID: https://orcid.org/0009-0001-6084-7698
 
 ## Structure
 
