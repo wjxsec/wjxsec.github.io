@@ -1,0 +1,8 @@
+{
+  "name": "wjxsec-visitor-admin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/admin.test.mjs"
+  }
+}

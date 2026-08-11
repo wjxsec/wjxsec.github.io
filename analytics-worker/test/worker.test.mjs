@@ -14,7 +14,7 @@ if (!globalThis.atob) {
   globalThis.atob = (value) => Buffer.from(value, "base64").toString("binary");
 }
 
-const { default: worker, decryptIp, encryptIp, maskIp, pruneExpired } = await import("../src/index.js");
+const { default: worker, decryptIp, encryptIp, hmacIp, maskIp, pruneExpired } = await import("../src/index.js");
 const encoder = new TextEncoder();
 
 class FakeStatement {
@@ -68,6 +68,7 @@ function makeEnvironment(database, options = {}) {
     IP_ENCRYPTION_KEY: options.encryptionKey || Buffer.alloc(32, 7).toString("base64"),
     IP_HMAC_KEY: "test-ip-hmac-secret",
     ADMIN_TOKEN: "test-admin-token",
+    PANEL_HMAC_KEY: "test-panel-hmac-key-that-is-long-enough-for-authentication",
     ALLOWED_ORIGIN: "https://wjxsec.github.io",
     RETENTION_DAYS: "90",
     IP_ENCRYPTION_KEY_VERSION: options.keyVersion || "v1",
@@ -236,9 +237,26 @@ test("admin list masks IPs, raw detail requires confirmation, and audit expiry n
   const unconfirmed = await worker.fetch(makeAdminRequest(`/v1/admin/visits/${record.event_id}`), env);
   assert.equal(unconfirmed.status, 428);
 
+  const bearerOnly = await worker.fetch(
+    makeAdminRequest(`/v1/admin/visits/${record.event_id}`, { "X-Confirm-Raw-IP": "yes" }),
+    env
+  );
+  assert.equal(bearerOnly.status, 403);
+
+  const actorHash = "a".repeat(64);
+  const actorTimestamp = Math.floor(Date.now() / 1000);
+  const actorSignature = await hmacIp(
+    `/v1/admin/visits/${record.event_id}:${actorHash}:${actorTimestamp}`,
+    env.PANEL_HMAC_KEY
+  );
   database.resultSets.push([record]);
   const detailResponse = await worker.fetch(
-    makeAdminRequest(`/v1/admin/visits/${record.event_id}`, { "X-Confirm-Raw-IP": "yes" }),
+    makeAdminRequest(`/v1/admin/visits/${record.event_id}`, {
+      "X-Confirm-Raw-IP": "yes",
+      "X-Admin-Actor-Hash": actorHash,
+      "X-Admin-Actor-Timestamp": String(actorTimestamp),
+      "X-Admin-Actor-Signature": actorSignature
+    }),
     env
   );
   assert.equal(detailResponse.status, 200);
@@ -246,6 +264,8 @@ test("admin list masks IPs, raw detail requires confirmation, and audit expiry n
   const audit = database.runs.find((entry) => entry.query.includes("INSERT INTO admin_audit"));
   assert.ok(audit);
   assert.equal(audit.values[1], record.expires_at);
+  assert.equal(audit.values[5], actorHash);
+  assert.equal(audit.values[6], "cloudflare_access");
 });
 
 test("the summary includes aggregated geography and ASN without returning raw IPs", async () => {

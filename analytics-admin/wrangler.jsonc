@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wjxsec-visitor-admin",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-11",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "PANEL_ORIGIN": "https://wjxsec-visitor-admin.wjx15896427883.workers.dev"
+  },
+  "services": [
+    {
+      "binding": "COLLECTOR",
+      "service": "wjxsec-visitor-collector"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "PANEL_RATE_LIMITER",
+      "namespace_id": "1784302529",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ]
+}

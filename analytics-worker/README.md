@@ -40,7 +40,8 @@ the administrator token, or encryption keys in Git or browser code. Wrangler
    ```
 
 2. Create the D1 database, then copy its returned `database_id` into
-   `wrangler.jsonc` in place of `REPLACE_WITH_D1_DATABASE_ID`.
+   `wrangler.jsonc`. The checked-in ID belongs to the current deployment and
+   must be replaced when deploying in another Cloudflare account.
 
    ```sh
    npx wrangler d1 create wjxsec-visitor-analytics
@@ -57,19 +58,21 @@ the administrator token, or encryption keys in Git or browser code. Wrangler
    npx wrangler d1 migrations apply wjxsec-visitor-analytics --remote
    ```
 
-4. Set the three secrets. Generate long random values and keep them outside
+4. Set the four secrets. Generate long random values and keep them outside
    Git:
 
    ```sh
    npx wrangler secret put IP_ENCRYPTION_KEY
    npx wrangler secret put IP_HMAC_KEY
    npx wrangler secret put ADMIN_TOKEN
+   npx wrangler secret put PANEL_HMAC_KEY
    ```
 
    `IP_ENCRYPTION_KEY` must be a base64-encoded 32-byte AES key. For example,
    on a trusted machine: `openssl rand -base64 32`. `IP_HMAC_KEY` is a separate
    high-entropy secret for unique-source aggregation. `ADMIN_TOKEN` protects
-   the administrator API.
+   the fixed administrator API. `PANEL_HMAC_KEY` is shared only with the
+   private admin Worker and authenticates its signed internal requests.
 
 5. Deploy the Worker:
 
@@ -85,8 +88,9 @@ the administrator token, or encryption keys in Git or browser code. Wrangler
    visitorCollectorUrl: "https://wjxsec-visitor-collector.<account-subdomain>.workers.dev/v1/visit"
    ```
 
-The empty value currently in that file is intentional: it prevents raw-IP
-collection until the Worker is working and its storage protections exist.
+The current deployment already has this public collector URL configured. Clear
+the value before publishing if the Worker or its storage protections are not
+available.
 
 ## Retention and key handling
 
@@ -106,13 +110,18 @@ key through `IP_ENCRYPTION_KEY_PREVIOUS` and
 records carrying its version have expired; otherwise the site will safely show
 their IP as unavailable rather than exposing it.
 
-## Private administrator API
+## Private administration
 
-The administrator endpoints intentionally have no CORS headers. Use a private
-terminal or trusted API client, keep the bearer token out of URLs and shell
-history when practical, and rotate it immediately if exposed. If you need a
-web dashboard, place it behind a real identity layer such as Cloudflare Access
-on a domain you control; a public dashboard or CORS policy is not sufficient.
+The administrator endpoints intentionally have no CORS headers. Aggregate and
+masked-list endpoints can be used from a private terminal for emergency
+diagnostics. Keep the bearer token out of URLs and shell history when practical,
+and rotate it immediately if exposed.
+
+The normal web control plane is the separate `analytics-admin/` Worker. It is
+protected by Cloudflare Access, validates the Access JWT again inside the
+Worker, and reaches this collector through a Service Binding. The browser never
+receives a bearer token. Full-IP reveal is deliberately restricted to a signed
+request from that private panel, so a bearer token alone cannot reveal it.
 
 ```sh
 curl -H "Authorization: Bearer $ANALYTICS_ADMIN_TOKEN" \
@@ -125,14 +134,8 @@ curl -H "Authorization: Bearer $ANALYTICS_ADMIN_TOKEN" \
 The summary returns aggregate event, unique-source, country, region, city, and
 ASN counts. The visits endpoint returns metadata plus masked IPs in pages of at
 most 50 rows; pass the returned `next_before` value as `before` for the next
-page. To decrypt exactly one record, use the event ID and explicit confirmation:
-
-```sh
-curl \
-  -H "Authorization: Bearer $ANALYTICS_ADMIN_TOKEN" \
-  -H "X-Confirm-Raw-IP: yes" \
-  "https://<worker>.workers.dev/v1/admin/visits/<event_id>"
-```
+page. Use the Access-protected panel to reveal exactly one full IP and record
+the associated audit event.
 
 ## Local verification
 

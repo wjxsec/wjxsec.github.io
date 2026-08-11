@@ -21,7 +21,8 @@ https://wjxsec.github.io
 - `assets/js/` - privacy-respecting analytics configuration and loaders
 - `assets/img/avatar.png` - profile photo
 - `assets/papers/mmd-power-side-channel-leakage.pdf` - CCF-A paper PDF
-- `analytics-worker/` - optional encrypted raw-IP collector and D1 migration
+- `analytics-worker/` - encrypted raw-IP collector, retention job, and D1 migrations
+- `analytics-admin/` - Cloudflare Access-protected private administration panel
 - `.nojekyll` - asks GitHub Pages to serve files as-is
 
 ## Publish
@@ -32,9 +33,8 @@ serve the site at `https://wjxsec.github.io`.
 
 ## Privacy-preserving traffic analytics
 
-The site includes a disabled-by-default Cloudflare Web Analytics loader. When
-configured, it provides aggregate page views, visits, referrer trends, and
-country-level trends in the Cloudflare dashboard.
+The site includes Cloudflare Web Analytics for aggregate page views, visits,
+referrer trends, and country-level trends in the Cloudflare dashboard.
 
 1. In Cloudflare, open **Web Analytics**, choose **Add a site**, and register
    `wjxsec.github.io` as the hostname.
@@ -52,7 +52,7 @@ in the analytics dashboard is aggregate and approximate.
 
 ## Raw-IP visitor log (90-day retention)
 
-The optional `analytics-worker/` project records raw source IP addresses and
+The `analytics-worker/` project records raw source IP addresses and
 IP-derived country, region, city, and ASN data for up to 90 days. It is kept
 separate from the static site so that the storage, access controls, and
 retention job are explicit. The homepage collector is enabled when its HTTPS
@@ -64,6 +64,13 @@ cryptographically authoritative record of every homepage request. For stronger
 source integrity and full request coverage, use a domain you control with the
 Worker in front of the site.
 
-See [`analytics-worker/README.md`](analytics-worker/README.md) for deployment,
-administrator access, and data-handling instructions. Never put the Worker
-administrator token, encryption key, or IP-hash secret in this repository.
+The deployed private dashboard is served by the separate `analytics-admin/`
+Worker and protected by Cloudflare Access for the owner's exact email identity.
+It lists masked addresses by default; revealing one full IP requires an
+explicit confirmation and writes a pseudonymized audit record. Browser code
+never receives the collector administrator token or encryption key.
+
+See [`analytics-worker/README.md`](analytics-worker/README.md) for collector and
+data-handling details, and [`analytics-admin/README.md`](analytics-admin/README.md)
+for the private panel's security boundary. Never put Worker administrator
+tokens, encryption keys, or IP-hash secrets in this repository.

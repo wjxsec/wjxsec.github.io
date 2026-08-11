@@ -291,6 +291,10 @@ async function handleVisitDetail(request, env, url) {
   if (!isUuid(eventId)) {
     return jsonResponse({ error: "Invalid event ID" }, 400);
   }
+  const actorHash = await verifyPanelRequestAttestation(request, env);
+  if (!actorHash) {
+    return jsonResponse({ error: "Private panel authentication required" }, 403);
+  }
 
   const now = Date.now();
   try {
@@ -306,7 +310,16 @@ async function handleVisitDetail(request, env, url) {
     }
 
     const ipAddress = await decryptRecordIp(record, env);
-    await writeAdminAudit(env.DB, now, record.expires_at, "reveal_raw_ip", eventId, 1);
+    await writeAdminAudit(
+      env.DB,
+      now,
+      record.expires_at,
+      "reveal_raw_ip",
+      eventId,
+      1,
+      actorHash,
+      "cloudflare_access"
+    );
 
     return jsonResponse({
       event_id: record.event_id,
@@ -405,15 +418,18 @@ async function requireAdminAccess(request, env) {
   if (!isAdminConfigured(env)) {
     return jsonResponse({ error: "Collector is not configured" }, 503);
   }
+  const authorized = isAuthorized(request, env);
   const sourceIp = normalizeIp(request.headers.get("CF-Connecting-IP")) || "unknown";
-  const rateLimit = await enforceRateLimit(env.ADMIN_RATE_LIMITER, `admin:${sourceIp}`);
+  const panelActor = authorized ? await verifyPanelRequestAttestation(request, env) : null;
+  const rateKey = panelActor ? `panel:${panelActor}` : `admin:${sourceIp}`;
+  const rateLimit = await enforceRateLimit(env.ADMIN_RATE_LIMITER, rateKey);
   if (rateLimit === "unavailable") {
     return jsonResponse({ error: "Collector is not configured" }, 503);
   }
   if (rateLimit === "limited") {
     return jsonResponse({ error: "Too many requests" }, 429, { "Retry-After": "60" });
   }
-  return isAuthorized(request, env) ? null : unauthorizedResponse();
+  return authorized ? null : unauthorizedResponse();
 }
 
 async function enforceRateLimit(limiter, key) {
@@ -580,6 +596,39 @@ function normalizeHost(value) {
   }
 }
 
+function normalizeActorHash(value) {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value) ? value : null;
+}
+
+async function verifyPanelRequestAttestation(request, env) {
+  const actorHash = normalizeActorHash(request.headers.get("X-Admin-Actor-Hash"));
+  const timestampText = request.headers.get("X-Admin-Actor-Timestamp") || "";
+  const signature = request.headers.get("X-Admin-Actor-Signature") || "";
+  const timestamp = Number(timestampText);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (
+    !actorHash ||
+    !Number.isSafeInteger(timestamp) ||
+    Math.abs(nowSeconds - timestamp) > 120 ||
+    !/^[0-9a-f]{64}$/.test(signature) ||
+    typeof env.PANEL_HMAC_KEY !== "string" ||
+    env.PANEL_HMAC_KEY.length < 32
+  ) {
+    return null;
+  }
+  try {
+    const url = new URL(request.url);
+    const requestTarget = `${url.pathname}${url.search}`;
+    const expected = await hmacIp(
+      `${requestTarget}:${actorHash}:${timestamp}`,
+      env.PANEL_HMAC_KEY
+    );
+    return constantTimeEqual(expected, signature) ? actorHash : null;
+  } catch {
+    return null;
+  }
+}
+
 function parsePositiveInteger(value, fallback, maximum) {
   if (value === null) {
     return fallback;
@@ -605,13 +654,23 @@ async function decryptRecordIp(record, env) {
   );
 }
 
-async function writeAdminAudit(db, now, sourceExpiresAt, action, eventId, resultCount) {
+async function writeAdminAudit(
+  db,
+  now,
+  sourceExpiresAt,
+  action,
+  eventId,
+  resultCount,
+  actorHash,
+  authMethod
+) {
   const expiresAt = Math.min(Number(sourceExpiresAt), now + MAX_RETENTION_DAYS * DAY_MS);
   await db.prepare(
-    `INSERT INTO admin_audit (occurred_at, expires_at, action, event_id, result_count)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO admin_audit (
+       occurred_at, expires_at, action, event_id, result_count, actor_hash, auth_method
+     ) VALUES (?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(now, expiresAt, action, eventId, resultCount)
+    .bind(now, expiresAt, action, eventId, resultCount, actorHash, authMethod)
     .run();
 }
 
