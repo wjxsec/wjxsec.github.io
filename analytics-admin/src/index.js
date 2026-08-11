@@ -5,6 +5,7 @@ const MAX_VISIT_LIMIT = 50;
 const MAX_RANGE_DAYS = 90;
 const JWKS_CACHE_MS = 5 * 60 * 1000;
 const CLOCK_SKEW_SECONDS = 60;
+const AUTH_DIAGNOSTIC_VERSION = "jwks-20260811-1";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const jwksCache = new Map();
@@ -157,14 +158,52 @@ async function authenticateAccess(request, env, accessFetch) {
     if (!email || email !== String(env.ACCESS_ALLOWED_EMAIL).trim().toLowerCase()) {
       throw new Error("Access identity is not allowed");
     }
+    let actorHash;
+    try {
+      actorHash = await hmacText(payload.sub, env.ADMIN_AUDIT_HMAC_KEY);
+    } catch {
+      throw new Error("Access actor hash failed");
+    }
     return {
       ok: true,
       payload,
-      actorHash: await hmacText(payload.sub, env.ADMIN_AUDIT_HMAC_KEY)
+      actorHash
     };
-  } catch {
-    return { ok: false, response: panelJson({ error: "Cloudflare Access token rejected" }, 403) };
+  } catch (error) {
+    return {
+      ok: false,
+      response: panelJson(
+        {
+          error: "Cloudflare Access token rejected",
+          authentication_stage: accessAuthenticationStage(error),
+          diagnostic_version: AUTH_DIAGNOSTIC_VERSION
+        },
+        403
+      )
+    };
   }
+}
+
+function accessAuthenticationStage(error) {
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes("subject")) return "subject";
+  if (message.includes("identity")) return "identity";
+  if (message.includes("team domain")) return "team_domain";
+  if (message.includes("issuer")) return "issuer";
+  if (message.includes("audience")) return "audience";
+  if (message.includes("expired") || message.includes("not active")) return "lifetime";
+  if (message.includes("algorithm")) return "algorithm";
+  if (message.includes("JWKS fetch")) return "jwks_fetch";
+  if (message.includes("JWKS HTTP")) return "jwks_http";
+  if (message.includes("JWKS JSON")) return "jwks_json";
+  if (message.includes("JWKS shape")) return "jwks_shape";
+  if (message.includes("JWKS key id")) return "jwks_kid";
+  if (message.includes("key import")) return "key_import";
+  if (message.includes("signing key") || message.includes("JWKS")) return "jwks";
+  if (message.includes("actor hash")) return "actor_hash";
+  if (message.includes("signature")) return "signature";
+  if (message.includes("decode") || message.includes("malformed") || message.includes("token")) return "token_format";
+  return "unknown";
 }
 
 export async function verifyAccessJwt(token, { teamDomain, audience, fetchImpl = fetch, now = Date.now() }) {
@@ -176,13 +215,24 @@ export async function verifyAccessJwt(token, { teamDomain, audience, fetchImpl =
     throw new Error("Access token is malformed");
   }
 
-  const header = decodeJwtJson(segments[0]);
-  const payload = decodeJwtJson(segments[1]);
+  let header;
+  let payload;
+  try {
+    header = decodeJwtJson(segments[0]);
+    payload = decodeJwtJson(segments[1]);
+  } catch {
+    throw new Error("Access token decode failed");
+  }
   if (header.alg !== "RS256" || typeof header.kid !== "string" || header.kid.length > 256) {
     throw new Error("Access token algorithm is not allowed");
   }
 
-  const teamHost = normalizeTeamDomain(teamDomain);
+  let teamHost;
+  try {
+    teamHost = normalizeTeamDomain(teamDomain);
+  } catch {
+    throw new Error("Access team domain is invalid");
+  }
   const expectedIssuer = `https://${teamHost}`;
   if (normalizeIssuer(payload.iss) !== expectedIssuer) {
     throw new Error("Access token issuer does not match");
@@ -202,22 +252,32 @@ export async function verifyAccessJwt(token, { teamDomain, audience, fetchImpl =
 
   const jwk = await findAccessJwk(teamHost, header.kid, fetchImpl, now);
   if (!jwk || jwk.kty !== "RSA") {
-    throw new Error("Access signing key is unavailable");
+    throw new Error("Access JWKS key id was not found");
   }
 
-  const key = await crypto.subtle.importKey(
-    "jwk",
-    jwk,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["verify"]
-  );
-  const verified = await crypto.subtle.verify(
-    { name: "RSASSA-PKCS1-v1_5" },
-    key,
-    base64UrlToBytes(segments[2]),
-    textEncoder.encode(`${segments[0]}.${segments[1]}`)
-  );
+  let key;
+  try {
+    key = await crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+  } catch {
+    throw new Error("Access signing key import failed");
+  }
+  let verified;
+  try {
+    verified = await crypto.subtle.verify(
+      { name: "RSASSA-PKCS1-v1_5" },
+      key,
+      base64UrlToBytes(segments[2]),
+      textEncoder.encode(`${segments[0]}.${segments[1]}`)
+    );
+  } catch {
+    throw new Error("Access signature verification failed");
+  }
   if (!verified) {
     throw new Error("Access token signature is invalid");
   }
@@ -242,16 +302,26 @@ async function findAccessJwk(teamHost, kid, fetchImpl, now) {
 }
 
 async function loadAccessJwks(teamHost, fetchImpl, now, unknownKidRefreshAt) {
-  const response = await fetchImpl(`https://${teamHost}/cdn-cgi/access/certs`, {
-    headers: { Accept: "application/json" },
-    redirect: "error"
-  });
-  if (!response || !response.ok) {
-    throw new Error("Could not load Access signing keys");
+  let response;
+  try {
+    response = await fetchImpl(`https://${teamHost}/cdn-cgi/access/certs`, {
+      headers: { Accept: "application/json" },
+      redirect: "error"
+    });
+  } catch {
+    throw new Error("Access JWKS fetch failed");
   }
-  const body = await response.json();
+  if (!response || !response.ok) {
+    throw new Error("Access JWKS HTTP response failed");
+  }
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("Access JWKS JSON parsing failed");
+  }
   if (!body || !Array.isArray(body.keys) || body.keys.length === 0 || body.keys.length > 32) {
-    throw new Error("Access signing keys are invalid");
+    throw new Error("Access JWKS shape is invalid");
   }
   const cached = {
     keys: body.keys,

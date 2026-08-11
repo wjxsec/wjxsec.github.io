@@ -170,6 +170,27 @@ test("the private panel requires Access and ships no browser-side administrator 
   const unauthenticated = await handleRequest(await makeAccessRequest("/", { noToken: true }), env, jwksFetch);
   assert.equal(unauthenticated.status, 401);
 
+  const wrongAudienceToken = await makeToken({ aud: ["wrong-audience"] });
+  const rejected = await handleRequest(
+    await makeAccessRequest("/", { token: wrongAudienceToken }),
+    env,
+    jwksFetch
+  );
+  assert.equal(rejected.status, 403);
+  assert.equal((await rejected.json()).authentication_stage, "audience");
+
+  clearJwksCacheForTests();
+  const jwksFailure = await handleRequest(
+    await makeAccessRequest("/"),
+    env,
+    async () => new Response("unavailable", { status: 503 })
+  );
+  assert.equal(jwksFailure.status, 403);
+  const jwksFailureBody = await jwksFailure.json();
+  assert.equal(jwksFailureBody.authentication_stage, "jwks_http");
+  assert.match(jwksFailureBody.diagnostic_version, /^jwks-/);
+
+  clearJwksCacheForTests();
   const page = await handleRequest(await makeAccessRequest("/"), env, jwksFetch);
   const html = await page.text();
   assert.equal(page.status, 200);
