@@ -24,7 +24,8 @@
         <h1>Privacy &amp; analytics</h1>
         <p>
           This is a static academic homepage hosted on GitHub Pages. It does not
-          use accounts, forms, advertising, or individual visitor profiling.
+          use accounts, advertising, cookies, or cross-site tracking, and it
+          does not use visitor data to personalize site content.
         </p>
       </section>
 
@@ -41,20 +42,47 @@
       <section class="section">
         <h2>IP addresses and location</h2>
         <p>
-          The site owner does not collect, retain, or display raw visitor IP
-          addresses. Country is an approximate aggregate analytics dimension,
-          not a precise location or identity signal. GitHub Pages
+          Cloudflare Web Analytics does not provide this site's owner with raw
+          visitor IP addresses. Country is an approximate aggregate analytics
+          dimension, not a precise location or identity signal. GitHub Pages
           may process network information to operate and secure its service;
           its request logs are not made available to this site's owner.
         </p>
       </section>
 
       <section class="section">
+        <h2>Optional raw-IP log</h2>
+        <p>
+          If the separate visitor-log collector is enabled, it records the
+          source IP address, approximate country, region code, city, network
+          ASN, page path, and referring hostname for traffic and security
+          analysis. Before storage, the raw IP is application-encrypted; a
+          separate keyed one-way IP digest is retained only to calculate
+          aggregate unique-source counts. The collector does not accept
+          client-supplied IP or location data and
+          does not store URL query strings, page fragments, form content,
+          cookies, or user-agent strings.
+        </p>
+        <p>
+          The application makes raw-IP records available for no more than 90
+          days, then its hourly cleanup deletes them. An audit record for a
+          raw-IP view expires no later than the source record. They can only be
+          read through protected administrator APIs. Cloudflare D1 may retain a
+          service-level recovery snapshot for its documented Time Travel period
+          after deletion; those snapshots are not exposed by this site.
+          Location is inferred from the network IP and may be inaccurate when
+          a visitor uses a VPN, proxy, NAT, or mobile network.
+        </p>
+      </section>
+
+      <section class="section">
         <h2>Your choices</h2>
         <p>
-          You can use browser privacy controls or content blockers to prevent
-          the optional analytics beacon from loading. Questions about this page
-          can be sent to <a href="mailto:jiaxi.wang.research@gmail.com">jiaxi.wang.research@gmail.com</a>.
+          The raw-IP collector and the optional analytics beacon both respect
+          the browser's Do Not Track and Global Privacy Control signals. You
+          can also use browser privacy controls or content blockers to prevent
+          them from loading. Questions
+          about this page can be sent to <a href="mailto:jiaxi.wang.research@gmail.com">jiaxi.wang.research@gmail.com</a>.
         </p>
       </section>
     </main>
@@ -63,5 +91,8 @@
       <p>© 2026 Jiaxi Wang.</p>
       <p class="footer-links"><a href="index.html">Back to homepage</a></p>
     </footer>
+    <script src="assets/js/analytics-config.js"></script>
+    <script src="assets/js/analytics.js"></script>
+    <script src="assets/js/visitor-collector.js"></script>
   </body>
 </html>

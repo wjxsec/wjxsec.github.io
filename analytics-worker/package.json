@@ -1,0 +1,8 @@
+{
+  "name": "wjxsec-visitor-collector",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/worker.test.mjs test/site-analytics.test.mjs"
+  }
+}

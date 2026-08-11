@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wjxsec-visitor-collector",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-11",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "ALLOWED_ORIGIN": "https://wjxsec.github.io",
+    "RETENTION_DAYS": "90",
+    "IP_ENCRYPTION_KEY_VERSION": "v1",
+    "IP_ENCRYPTION_KEY_PREVIOUS_VERSION": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "wjxsec-visitor-analytics",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "VISIT_RATE_LIMITER",
+      "namespace_id": "1784302527",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    },
+    {
+      "name": "ADMIN_RATE_LIMITER",
+      "namespace_id": "1784302528",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ],
+  "triggers": {
+    "crons": ["17 * * * *"]
+  }
+}

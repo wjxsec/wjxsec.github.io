@@ -2,8 +2,10 @@
   "use strict";
 
   const token = window.WJXSEC_ANALYTICS?.cloudflareWebAnalyticsToken;
+  const doNotTrackValue = String(navigator.doNotTrack || window.doNotTrack || "").toLowerCase();
+  const doNotTrack = doNotTrackValue === "1" || doNotTrackValue === "yes" || navigator.globalPrivacyControl === true;
 
-  if (typeof token !== "string" || token.trim() === "") {
+  if (doNotTrack || typeof token !== "string" || token.trim() === "") {
     document.documentElement.dataset.analytics = "disabled";
     return;
   }
