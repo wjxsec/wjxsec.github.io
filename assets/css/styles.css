@@ -306,6 +306,11 @@ h3 {
   margin: 0;
 }
 
+.site-footer .footer-links {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 760px) {
   .site-header {
     position: static;
