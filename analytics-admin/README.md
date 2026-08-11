@@ -26,8 +26,19 @@ existing collector Worker remains public for `POST /v1/visit`.
 The service binding targets the existing `wjxsec-visitor-collector` Worker.
 The rate-limit namespace must remain unique within the Cloudflare account.
 
-After the Access application exists, set these six values as Worker secrets;
-never commit them:
+Deploy in this order:
+
+1. From `analytics-worker/`, apply `0002_admin_actor.sql` to the remote D1
+   database, set or rotate `PANEL_HMAC_KEY` and `ADMIN_TOKEN`, and deploy the
+   collector.
+2. From this directory, deploy the admin Worker once so its production
+   `workers.dev` route exists.
+3. In Cloudflare: Workers & Pages -> `wjxsec-visitor-admin` -> Domains, change
+   the production Worker URL from **Public** to **Restricted**. Configure the
+   generated Access policy to allow only the intended identity and use a short
+   session. Prefer an MFA-capable identity provider when available.
+4. Copy the Zero Trust team domain and the application's audience tag, then
+   set the following six Worker secrets. Never commit them:
 
 ```sh
 npx wrangler secret put ACCESS_TEAM_DOMAIN
@@ -48,24 +59,17 @@ Worker as a defense-in-depth check beyond the Access policy.
 secret; it authenticates the Access actor attestation for raw-IP reveals.
 `ADMIN_AUDIT_HMAC_KEY` is an independent random value of at least 32 characters.
 
-Bootstrap the Worker, then enable Access for the production `workers.dev`
-route. Run commands from this `analytics-admin` directory (or pass its config
-explicitly):
+5. Confirm the `COLLECTOR` Service Binding and `PANEL_RATE_LIMITER` binding from
+   `wrangler.jsonc`, then deploy the final admin version. Run Wrangler commands
+   from this directory (or pass its config explicitly):
 
 ```sh
 npx wrangler deploy
 ```
 
-In Cloudflare: Workers & Pages -> `wjxsec-visitor-admin` -> Domains -> change
-the production Worker URL from **Public** to **Restricted**. Configure the
-generated Access policy to allow only the intended identity and use a short
-session. Prefer an MFA-capable identity provider when available.
-Copy the resulting audience tag into the `ACCESS_AUD` secret, add all six
-secrets in one Dashboard version, and verify that an unauthenticated browser is
-rejected.
-
-The collector's `0002_admin_actor.sql` migration must also be applied so a
-successful raw-IP reveal can record the HMAC-pseudonymized Access actor.
+6. Verify that an unauthenticated browser is rejected, the allowed identity can
+   load the panel, the public collector still returns `204`, and one confirmed
+   raw-IP reveal writes the HMAC-pseudonymized Access actor to `admin_audit`.
 
 ## Test
 

@@ -249,6 +249,49 @@ test("admin list masks IPs, raw detail requires confirmation, and audit expiry n
     `/v1/admin/visits/${record.event_id}:${actorHash}:${actorTimestamp}`,
     env.PANEL_HMAC_KEY
   );
+
+  const badSignature = await worker.fetch(
+    makeAdminRequest(`/v1/admin/visits/${record.event_id}`, {
+      "X-Confirm-Raw-IP": "yes",
+      "X-Admin-Actor-Hash": actorHash,
+      "X-Admin-Actor-Timestamp": String(actorTimestamp),
+      "X-Admin-Actor-Signature": "0".repeat(64)
+    }),
+    env
+  );
+  assert.equal(badSignature.status, 403);
+
+  const expiredTimestamp = actorTimestamp - 121;
+  const expiredSignature = await hmacIp(
+    `/v1/admin/visits/${record.event_id}:${actorHash}:${expiredTimestamp}`,
+    env.PANEL_HMAC_KEY
+  );
+  const expiredAttestation = await worker.fetch(
+    makeAdminRequest(`/v1/admin/visits/${record.event_id}`, {
+      "X-Confirm-Raw-IP": "yes",
+      "X-Admin-Actor-Hash": actorHash,
+      "X-Admin-Actor-Timestamp": String(expiredTimestamp),
+      "X-Admin-Actor-Signature": expiredSignature
+    }),
+    env
+  );
+  assert.equal(expiredAttestation.status, 403);
+
+  const otherPathSignature = await hmacIp(
+    `/v1/admin/summary?days=30:${actorHash}:${actorTimestamp}`,
+    env.PANEL_HMAC_KEY
+  );
+  const crossPathReplay = await worker.fetch(
+    makeAdminRequest(`/v1/admin/visits/${record.event_id}`, {
+      "X-Confirm-Raw-IP": "yes",
+      "X-Admin-Actor-Hash": actorHash,
+      "X-Admin-Actor-Timestamp": String(actorTimestamp),
+      "X-Admin-Actor-Signature": otherPathSignature
+    }),
+    env
+  );
+  assert.equal(crossPathReplay.status, 403);
+
   database.resultSets.push([record]);
   const detailResponse = await worker.fetch(
     makeAdminRequest(`/v1/admin/visits/${record.event_id}`, {
