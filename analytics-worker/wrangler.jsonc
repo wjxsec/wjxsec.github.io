@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "wjxsec-visitor-analytics",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "b7067151-9cbd-4513-af86-791ed6b611d3",
       "migrations_dir": "migrations"
     }
   ],

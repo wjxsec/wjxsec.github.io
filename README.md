@@ -55,8 +55,8 @@ in the analytics dashboard is aggregate and approximate.
 The optional `analytics-worker/` project records raw source IP addresses and
 IP-derived country, region, city, and ASN data for up to 90 days. It is kept
 separate from the static site so that the storage, access controls, and
-retention job are explicit. The homepage collector is disabled until its HTTPS
-Worker URL is added to `visitorCollectorUrl` in `assets/js/analytics-config.js`.
+retention job are explicit. The homepage collector is enabled when its HTTPS
+Worker URL is configured in `visitorCollectorUrl` in `assets/js/analytics-config.js`.
 
 Because this static GitHub Pages site cannot authenticate a cross-origin beacon,
 a `workers.dev` collector is an access-sampling endpoint rather than a

@@ -105,8 +105,11 @@ test("the raw-IP collector remains disabled until configured and sends only mini
   });
 });
 
-test("the checked-in analytics configuration leaves the raw collector off", () => {
+test("the checked-in analytics configuration enables the deployed raw collector", () => {
   const browser = makeBrowser();
   vm.runInContext(analyticsConfig, browser.context);
-  assert.equal(browser.window.WJXSEC_ANALYTICS.visitorCollectorUrl, "");
+  assert.equal(
+    browser.window.WJXSEC_ANALYTICS.visitorCollectorUrl,
+    "https://wjxsec-visitor-collector.wjx15896427883.workers.dev/v1/visit"
+  );
 });
