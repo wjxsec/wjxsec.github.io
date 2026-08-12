@@ -151,6 +151,10 @@ rankings deliberately include these clearly labeled fixtures during the
 90-day test window. Production visitor IPs continue to use the private Worker
 secret.
 
+The four fixtures in the current production D1 database were inserted once for
+this live demonstration. They are not a migration and will not be recreated
+when the database is rebuilt; they expire normally after 90 days.
+
 ## Local verification
 
 No package install is required for the included tests when Node.js is present:

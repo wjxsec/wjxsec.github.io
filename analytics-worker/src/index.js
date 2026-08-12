@@ -168,10 +168,10 @@ async function handleSummary(request, env, url) {
         env.DB,
         `SELECT COUNT(*) AS events, COUNT(DISTINCT ip_hmac) AS unique_ip_hashes,
           SUM(CASE WHEN encryption_key_version = 'synthetic-v1'
-            AND page_path LIKE '/__test__/%'
+            AND page_path GLOB '/__test__/*'
             AND referrer_host = 'synthetic-test.invalid' THEN 1 ELSE 0 END) AS synthetic_events,
           COUNT(DISTINCT CASE WHEN encryption_key_version = 'synthetic-v1'
-            AND page_path LIKE '/__test__/%'
+            AND page_path GLOB '/__test__/*'
             AND referrer_host = 'synthetic-test.invalid' THEN ip_hmac END) AS synthetic_unique_ip_hashes
          FROM visitor_events WHERE observed_at >= ? AND expires_at > ?`,
         [since, now]

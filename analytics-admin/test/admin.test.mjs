@@ -286,6 +286,34 @@ test("summary and list APIs only proxy fixed server-side requests with the secre
   assert.equal(new URL(requests[1].url).pathname + new URL(requests[1].url).search, "/v1/admin/visits?limit=50&before=42");
 });
 
+test("production collector calls use the fixed HTTPS origin and reject redirects", async () => {
+  clearJwksCacheForTests();
+  const calls = [];
+  const env = makeEnvironment({ fetch: async () => new Response("{}") });
+  delete env.COLLECTOR_FETCH_FOR_TESTS;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (request) => {
+    calls.push(request);
+    return new Response(JSON.stringify({ events: 0, unique_ip_hashes: 0 }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  };
+  try {
+    const response = await handleRequest(
+      await makeAccessRequest("/api/summary?days=30"),
+      env,
+      makeJwksFetch()
+    );
+    assert.equal(response.status, 200);
+    assert.equal(calls.length, 1);
+    assert.equal(new URL(calls[0].url).origin, "https://wjxsec-visitor-collector.wjx15896427883.workers.dev");
+    assert.equal(calls[0].redirect, "manual");
+    assert.equal(calls[0].headers.get("Authorization"), `Bearer ${collectorToken}`);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("collector failures and redirects stay fail-closed without leaking details", async () => {
   clearJwksCacheForTests();
   const failedEnv = makeEnvironment({

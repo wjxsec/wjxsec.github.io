@@ -377,6 +377,10 @@ test("the summary includes aggregated geography and ASN without returning raw IP
   assert.equal(body.synthetic_events, 1);
   assert.equal(body.synthetic_unique_ip_hashes, 1);
   assert.deepEqual(body.cities, [{ city: "Xi'an", events: 3 }]);
+  const totalsQuery = database.queries[0].query;
+  assert.match(totalsQuery, /encryption_key_version = 'synthetic-v1'/);
+  assert.match(totalsQuery, /page_path GLOB '\/__test__\/\*'/);
+  assert.match(totalsQuery, /referrer_host = 'synthetic-test\.invalid'/);
   assert.deepEqual(body.asns, [{ asn: 4134, events: 3 }]);
   assert.equal("ip_address" in body, false);
 });
