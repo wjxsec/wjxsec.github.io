@@ -4,8 +4,9 @@ const MAX_UPSTREAM_BODY_BYTES = 1024 * 1024;
 const MAX_VISIT_LIMIT = 50;
 const MAX_RANGE_DAYS = 90;
 const JWKS_CACHE_MS = 5 * 60 * 1000;
+const MAX_JWKS_REDIRECTS = 2;
 const CLOCK_SKEW_SECONDS = 60;
-const AUTH_DIAGNOSTIC_VERSION = "jwks-20260811-1";
+const AUTH_DIAGNOSTIC_VERSION = "jwks-20260812-2";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const jwksCache = new Map();
@@ -16,7 +17,7 @@ export default {
   }
 };
 
-export async function handleRequest(request, env, accessFetch = fetch) {
+export async function handleRequest(request, env, accessFetch = null) {
   const url = new URL(request.url);
   const sourceIp = (request.headers.get("CF-Connecting-IP") || "unknown").slice(0, 80);
   const preAuthLimit = await requirePanelRateLimit(env, `auth:${sourceIp}`);
@@ -194,6 +195,7 @@ function accessAuthenticationStage(error) {
   if (message.includes("expired") || message.includes("not active")) return "lifetime";
   if (message.includes("algorithm")) return "algorithm";
   if (message.includes("JWKS fetch")) return "jwks_fetch";
+  if (message.includes("JWKS redirect")) return "jwks_redirect";
   if (message.includes("JWKS HTTP")) return "jwks_http";
   if (message.includes("JWKS JSON")) return "jwks_json";
   if (message.includes("JWKS shape")) return "jwks_shape";
@@ -206,7 +208,7 @@ function accessAuthenticationStage(error) {
   return "unknown";
 }
 
-export async function verifyAccessJwt(token, { teamDomain, audience, fetchImpl = fetch, now = Date.now() }) {
+export async function verifyAccessJwt(token, { teamDomain, audience, fetchImpl = null, now = Date.now() }) {
   if (typeof token !== "string" || token.length === 0 || token.length > MAX_ACCESS_TOKEN_BYTES) {
     throw new Error("Access token is invalid");
   }
@@ -302,14 +304,45 @@ async function findAccessJwk(teamHost, kid, fetchImpl, now) {
 }
 
 async function loadAccessJwks(teamHost, fetchImpl, now, unknownKidRefreshAt) {
-  let response;
-  try {
-    response = await fetchImpl(`https://${teamHost}/cdn-cgi/access/certs`, {
+  let requestUrl = new URL(`https://${teamHost}/cdn-cgi/access/certs`);
+  let response = null;
+  for (let redirectCount = 0; redirectCount <= MAX_JWKS_REDIRECTS; redirectCount += 1) {
+    const request = new Request(requestUrl, {
+      method: "GET",
       headers: { Accept: "application/json" },
-      redirect: "error"
+      redirect: "manual"
     });
-  } catch {
-    throw new Error("Access JWKS fetch failed");
+    request.headers.delete("cf-workers-preview-token");
+    try {
+      response = fetchImpl
+        ? await fetchImpl(request)
+        : await globalThis.fetch(request);
+    } catch {
+      throw new Error("Access JWKS fetch failed");
+    }
+
+    if (response.status < 300 || response.status >= 400) {
+      break;
+    }
+    const location = response.headers.get("Location");
+    if (!location) {
+      throw new Error("Access JWKS redirect rejected");
+    }
+    let nextUrl;
+    try {
+      nextUrl = new URL(location, requestUrl);
+    } catch {
+      throw new Error("Access JWKS redirect rejected");
+    }
+    if (
+      redirectCount >= MAX_JWKS_REDIRECTS ||
+      nextUrl.origin !== `https://${teamHost}` ||
+      nextUrl.username ||
+      nextUrl.password
+    ) {
+      throw new Error("Access JWKS redirect rejected");
+    }
+    requestUrl = nextUrl;
   }
   if (!response || !response.ok) {
     throw new Error("Access JWKS HTTP response failed");

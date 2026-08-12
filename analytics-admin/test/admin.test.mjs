@@ -64,8 +64,8 @@ async function makeToken(overrides = {}, headerOverrides = {}) {
 
 function makeJwksFetch() {
   const calls = [];
-  const fetchImpl = async (url) => {
-    calls.push(url);
+  const fetchImpl = async (request) => {
+    calls.push(request);
     return new Response(JSON.stringify({ keys: [publicJwk] }), {
       headers: { "Content-Type": "application/json" }
     });
@@ -118,7 +118,12 @@ test("Access JWT verification checks signature, issuer, audience, and expiry", a
   const token = await makeToken();
   const payload = await verifyAccessJwt(token, { teamDomain, audience, fetchImpl: jwksFetch });
   assert.equal(payload.sub, "access-user-123");
-  assert.deepEqual(jwksFetch.calls, [`https://${teamDomain}/cdn-cgi/access/certs`]);
+  assert.equal(jwksFetch.calls.length, 1);
+  assert.equal(jwksFetch.calls[0].url, `https://${teamDomain}/cdn-cgi/access/certs`);
+  assert.equal(jwksFetch.calls[0].method, "GET");
+  assert.equal(jwksFetch.calls[0].redirect, "manual");
+  assert.equal(jwksFetch.calls[0].headers.get("Accept"), "application/json");
+  assert.equal(jwksFetch.calls[0].headers.get("cf-workers-preview-token"), null);
 
   const wrongAudience = await makeToken({ aud: ["wrong-audience"] });
   await assert.rejects(() => verifyAccessJwt(
@@ -188,7 +193,50 @@ test("the private panel requires Access and ships no browser-side administrator 
   assert.equal(jwksFailure.status, 403);
   const jwksFailureBody = await jwksFailure.json();
   assert.equal(jwksFailureBody.authentication_stage, "jwks_http");
-  assert.match(jwksFailureBody.diagnostic_version, /^jwks-/);
+  assert.equal(jwksFailureBody.diagnostic_version, "jwks-20260812-2");
+
+  clearJwksCacheForTests();
+  const fetchFailure = await handleRequest(
+    await makeAccessRequest("/"),
+    env,
+    async () => { throw new TypeError("network unavailable"); }
+  );
+  assert.equal(fetchFailure.status, 403);
+  assert.equal((await fetchFailure.json()).authentication_stage, "jwks_fetch");
+
+  clearJwksCacheForTests();
+  const redirectedRequests = [];
+  const sameHostRedirect = await handleRequest(
+    await makeAccessRequest("/"),
+    env,
+    async (request) => {
+      redirectedRequests.push(request);
+      if (redirectedRequests.length === 1) {
+        return new Response(null, {
+          status: 302,
+          headers: { Location: `https://${teamDomain}/cdn-cgi/access/certs?rotation=current` }
+        });
+      }
+      return new Response(JSON.stringify({ keys: [publicJwk] }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  );
+  assert.equal(sameHostRedirect.status, 200);
+  assert.equal(redirectedRequests.length, 2);
+  assert.equal(redirectedRequests[1].redirect, "manual");
+
+  clearJwksCacheForTests();
+  const crossHostRedirect = await handleRequest(
+    await makeAccessRequest("/"),
+    env,
+    async () => new Response(null, {
+      status: 302,
+      headers: { Location: "https://attacker.example/jwks" }
+    })
+  );
+  assert.equal(crossHostRedirect.status, 403);
+  assert.equal((await crossHostRedirect.json()).authentication_stage, "jwks_redirect");
 
   clearJwksCacheForTests();
   const page = await handleRequest(await makeAccessRequest("/"), env, jwksFetch);
