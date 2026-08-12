@@ -472,7 +472,11 @@ function getRetentionDays(env) {
 
 function getCurrentEncryptionKeyVersion(env) {
   const version = env.IP_ENCRYPTION_KEY_VERSION || "v1";
-  if (typeof version !== "string" || !/^[A-Za-z0-9_-]{1,32}$/.test(version)) {
+  if (
+    typeof version !== "string" ||
+    !/^[A-Za-z0-9_-]{1,32}$/.test(version) ||
+    version === SYNTHETIC_KEY_VERSION
+  ) {
     throw new Error("Invalid encryption key version");
   }
   return version;
@@ -489,6 +493,7 @@ function getEncryptionKeyForRecord(record, env) {
   if (
     typeof previousVersion === "string" &&
     /^[A-Za-z0-9_-]{1,32}$/.test(previousVersion) &&
+    previousVersion !== SYNTHETIC_KEY_VERSION &&
     record.encryption_key_version === previousVersion &&
     env.IP_ENCRYPTION_KEY_PREVIOUS
   ) {
@@ -667,11 +672,23 @@ function isUuid(value) {
 }
 
 async function decryptRecordIp(record, env) {
-  return decryptIp(
+  const ipAddress = await decryptIp(
     record.ip_ciphertext,
     record.ip_iv,
     getEncryptionKeyForRecord(record, env),
     buildAad(record.event_id, record.observed_at, record.expires_at)
+  );
+  if (isSyntheticRecord(record) && !isDocumentationIp(ipAddress)) {
+    throw new Error("Synthetic record is outside documentation address ranges");
+  }
+  return ipAddress;
+}
+
+function isDocumentationIp(value) {
+  const ipAddress = normalizeIp(value);
+  return Boolean(ipAddress) && (
+    /^192\.0\.2\.|^198\.51\.100\.|^203\.0\.113\./.test(ipAddress) ||
+    /^2001:0?db8:/.test(ipAddress)
   );
 }
 

@@ -144,8 +144,9 @@ Records with a `/__test__/` path, `synthetic-test.invalid` referrer, and
 `synthetic-v1` key version are clearly marked test fixtures made from the
 documentation address ranges `192.0.2.0/24`, `198.51.100.0/24`,
 `203.0.113.0/24`, and `2001:db8::/32`. Their test key is intentionally public;
-it is accepted only when all synthetic markers match and is never used for a
-normal visit. The panel reports how many aggregate events and unique sources
+it is accepted only when all synthetic markers match and the decrypted address
+is inside one of those documentation ranges. It is never used for a normal
+visit. The panel reports how many aggregate events and unique sources
 are synthetic, and prefixes each test path with `[TEST]`. Geography and ASN
 rankings deliberately include these clearly labeled fixtures during the
 90-day test window. Production visitor IPs continue to use the private Worker

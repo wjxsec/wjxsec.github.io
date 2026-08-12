@@ -337,25 +337,51 @@ test("explicitly marked synthetic records use only the public test key", async (
     page_path: "/__test__/tokyo",
     referrer_host: "synthetic-test.invalid"
   };
-  const encrypted = await encryptIp(
-    "192.0.2.17",
-    SYNTHETIC_TEST_KEY_BASE64,
-    `${record.event_id}:${record.observed_at}:${record.expires_at}`
-  );
-  record.ip_ciphertext = encrypted.ciphertext;
-  record.ip_iv = encrypted.iv;
-
-  database.resultSets.push([record]);
-  const response = await worker.fetch(makeAdminRequest("/v1/admin/visits?limit=1"), env);
-  const body = await response.json();
-  assert.equal(response.status, 200);
-  assert.equal(body.visits[0].ip_masked, "192.0.2.0");
-  assert.equal(body.visits[0].synthetic, true);
+  const documentationSamples = [
+    ["192.0.2.17", "192.0.2.0"],
+    ["198.51.100.73", "198.51.100.0"],
+    ["203.0.113.204", "203.0.113.0"],
+    ["2001:db8:2::45", "IPv6 (masked)"],
+    ["2001:0db8::45", "IPv6 (masked)"]
+  ];
+  for (const [ipAddress, expectedMask] of documentationSamples) {
+    const encrypted = await encryptIp(
+      ipAddress,
+      SYNTHETIC_TEST_KEY_BASE64,
+      `${record.event_id}:${record.observed_at}:${record.expires_at}`
+    );
+    record.ip_ciphertext = encrypted.ciphertext;
+    record.ip_iv = encrypted.iv;
+    database.resultSets.push([record]);
+    const response = await worker.fetch(makeAdminRequest("/v1/admin/visits?limit=1"), env);
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.visits[0].ip_masked, expectedMask);
+    assert.equal(body.visits[0].synthetic, true);
+  }
 
   record.page_path = "/";
   database.resultSets.push([record]);
   const rejected = await worker.fetch(makeAdminRequest("/v1/admin/visits?limit=1"), env);
   assert.equal((await rejected.json()).visits[0].ip_masked, "unavailable");
+
+  record.page_path = "/__test__/not-documentation-ip";
+  const nonDocumentation = await encryptIp(
+    "8.8.8.8",
+    SYNTHETIC_TEST_KEY_BASE64,
+    `${record.event_id}:${record.observed_at}:${record.expires_at}`
+  );
+  record.ip_ciphertext = nonDocumentation.ciphertext;
+  record.ip_iv = nonDocumentation.iv;
+  database.resultSets.push([record]);
+  const unsafeFixture = await worker.fetch(makeAdminRequest("/v1/admin/visits?limit=1"), env);
+  assert.equal((await unsafeFixture.json()).visits[0].ip_masked, "unavailable");
+
+  const collisionDatabase = new FakeDatabase();
+  const collisionEnv = makeEnvironment(collisionDatabase, { keyVersion: SYNTHETIC_KEY_VERSION });
+  const collision = await worker.fetch(makeRequest(), collisionEnv);
+  assert.equal(collision.status, 503);
+  assert.equal(collisionDatabase.runs.length, 0);
 });
 
 test("the summary includes aggregated geography and ASN without returning raw IPs", async () => {
