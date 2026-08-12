@@ -14,7 +14,16 @@ if (!globalThis.atob) {
   globalThis.atob = (value) => Buffer.from(value, "base64").toString("binary");
 }
 
-const { default: worker, decryptIp, encryptIp, hmacIp, maskIp, pruneExpired } = await import("../src/index.js");
+const {
+  default: worker,
+  decryptIp,
+  encryptIp,
+  hmacIp,
+  maskIp,
+  pruneExpired,
+  SYNTHETIC_KEY_VERSION,
+  SYNTHETIC_TEST_KEY_BASE64
+} = await import("../src/index.js");
 const encoder = new TextEncoder();
 
 class FakeStatement {
@@ -309,6 +318,43 @@ test("admin list masks IPs, raw detail requires confirmation, and audit expiry n
   assert.equal(audit.values[1], record.expires_at);
   assert.equal(audit.values[5], actorHash);
   assert.equal(audit.values[6], "cloudflare_access");
+});
+
+test("explicitly marked synthetic records use only the public test key", async () => {
+  const database = new FakeDatabase();
+  const env = makeEnvironment(database, { encryptionKey: Buffer.alloc(32, 9).toString("base64") });
+  const now = Date.now();
+  const record = {
+    id: 10,
+    event_id: "0279fbe1-73db-4c4d-aedf-000000000101",
+    observed_at: now - 1000,
+    expires_at: now + 90 * 24 * 60 * 60 * 1000,
+    encryption_key_version: SYNTHETIC_KEY_VERSION,
+    country_code: "JP",
+    region_code: "TEST-13",
+    city: "TEST · Tokyo",
+    asn: 64512,
+    page_path: "/__test__/tokyo",
+    referrer_host: "synthetic-test.invalid"
+  };
+  const encrypted = await encryptIp(
+    "192.0.2.17",
+    SYNTHETIC_TEST_KEY_BASE64,
+    `${record.event_id}:${record.observed_at}:${record.expires_at}`
+  );
+  record.ip_ciphertext = encrypted.ciphertext;
+  record.ip_iv = encrypted.iv;
+
+  database.resultSets.push([record]);
+  const response = await worker.fetch(makeAdminRequest("/v1/admin/visits?limit=1"), env);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.visits[0].ip_masked, "192.0.2.0");
+
+  record.page_path = "/";
+  database.resultSets.push([record]);
+  const rejected = await worker.fetch(makeAdminRequest("/v1/admin/visits?limit=1"), env);
+  assert.equal((await rejected.json()).visits[0].ip_masked, "unavailable");
 });
 
 test("the summary includes aggregated geography and ASN without returning raw IPs", async () => {

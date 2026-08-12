@@ -1,6 +1,7 @@
 const MAX_ACCESS_TOKEN_BYTES = 8192;
 const MAX_REVEAL_BODY_BYTES = 256;
 const MAX_UPSTREAM_BODY_BYTES = 1024 * 1024;
+const COLLECTOR_ORIGIN = "https://wjxsec-visitor-collector.wjx15896427883.workers.dev";
 const MAX_VISIT_LIMIT = 50;
 const MAX_RANGE_DAYS = 90;
 const JWKS_CACHE_MS = 5 * 60 * 1000;
@@ -385,7 +386,7 @@ async function requirePanelRateLimit(env, key) {
 }
 
 async function callCollector(env, path, { reveal = false, actorHash = "" } = {}) {
-  if (!env.COLLECTOR || typeof env.COLLECTOR.fetch !== "function" || !env.COLLECTOR_ADMIN_TOKEN) {
+  if (typeof env.COLLECTOR_ADMIN_TOKEN !== "string" || !env.COLLECTOR_ADMIN_TOKEN) {
     return panelJson({ error: "Management service is not configured" }, 503);
   }
   if (!actorHash || !env.COLLECTOR_PANEL_HMAC_KEY) {
@@ -409,13 +410,26 @@ async function callCollector(env, path, { reveal = false, actorHash = "" } = {})
 
   let upstream;
   try {
-    upstream = await env.COLLECTOR.fetch(new Request(`https://collector.internal${path}`, {
+    const collectorFetch = env.COLLECTOR && typeof env.COLLECTOR.fetch === "function"
+      ? env.COLLECTOR.fetch.bind(env.COLLECTOR)
+      : globalThis.fetch.bind(globalThis);
+    upstream = await collectorFetch(new Request(new URL(path, COLLECTOR_ORIGIN), {
       method: "GET",
       headers,
-      redirect: "error"
+      redirect: "manual"
     }));
   } catch {
-    return panelJson({ error: "Management service is unavailable" }, 502);
+    return panelJson({
+      error: "Management service is unavailable",
+      management_stage: "collector_fetch"
+    }, 502);
+  }
+
+  if (upstream.status >= 300 && upstream.status < 400) {
+    return panelJson({
+      error: "Management service is unavailable",
+      management_stage: "collector_redirect"
+    }, 502);
   }
 
   let bytes;
@@ -436,7 +450,15 @@ async function callCollector(env, path, { reveal = false, actorHash = "" } = {})
   }
 
   if (upstream.status === 401 || upstream.status === 403 || upstream.status >= 500) {
-    return panelJson({ error: "Management service is unavailable" }, 502);
+    const managementStage = upstream.status === 401
+      ? "collector_auth"
+      : upstream.status === 403
+        ? "collector_attestation"
+        : "collector_server";
+    return panelJson({
+      error: "Management service is unavailable",
+      management_stage: managementStage
+    }, 502);
   }
   const status = upstream.status >= 200 && upstream.status < 500 ? upstream.status : 502;
   const extraHeaders = upstream.status === 429 ? { "Retry-After": upstream.headers.get("Retry-After") || "60" } : {};

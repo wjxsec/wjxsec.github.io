@@ -5,6 +5,8 @@ const MAX_PATH_LENGTH = 512;
 const MAX_HOST_LENGTH = 253;
 const ADMIN_PAGE_LIMIT = 50;
 const DEFAULT_ALLOWED_ORIGIN = "https://wjxsec.github.io";
+export const SYNTHETIC_KEY_VERSION = "synthetic-v1";
+export const SYNTHETIC_TEST_KEY_BASE64 = "7uYzmLd21zJCZAcIB78Z2jAVeNqXfLkI9o2mVThFVgc=";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
@@ -468,6 +470,14 @@ function getCurrentEncryptionKeyVersion(env) {
 }
 
 function getEncryptionKeyForRecord(record, env) {
+  if (
+    record.encryption_key_version === SYNTHETIC_KEY_VERSION &&
+    typeof record.page_path === "string" &&
+    record.page_path.startsWith("/__test__/") &&
+    record.referrer_host === "synthetic-test.invalid"
+  ) {
+    return SYNTHETIC_TEST_KEY_BASE64;
+  }
   if (record.encryption_key_version === getCurrentEncryptionKeyVersion(env)) {
     return env.IP_ENCRYPTION_KEY;
   }

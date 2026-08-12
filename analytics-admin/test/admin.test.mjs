@@ -272,6 +272,8 @@ test("summary and list APIs only proxy fixed server-side requests with the secre
   const summary = await handleRequest(await makeAccessRequest("/api/summary?days=999&ignored=secret"), env, jwksFetch);
   assert.equal(summary.status, 200);
   assert.equal(new URL(requests[0].url).pathname + new URL(requests[0].url).search, "/v1/admin/summary?days=90");
+  assert.equal(new URL(requests[0].url).origin, "https://wjxsec-visitor-collector.wjx15896427883.workers.dev");
+  assert.equal(requests[0].redirect, "manual");
   assert.equal(requests[0].headers.get("Authorization"), `Bearer ${collectorToken}`);
   assert.match(requests[0].headers.get("X-Admin-Actor-Hash"), /^[0-9a-f]{64}$/);
   assert.match(requests[0].headers.get("X-Admin-Actor-Signature"), /^[0-9a-f]{64}$/);
@@ -280,6 +282,41 @@ test("summary and list APIs only proxy fixed server-side requests with the secre
   const visits = await handleRequest(await makeAccessRequest("/api/visits?limit=500&before=42&url=https://attacker.example"), env, jwksFetch);
   assert.equal(visits.status, 200);
   assert.equal(new URL(requests[1].url).pathname + new URL(requests[1].url).search, "/v1/admin/visits?limit=50&before=42");
+});
+
+test("collector failures and redirects stay fail-closed without leaking details", async () => {
+  clearJwksCacheForTests();
+  const failedEnv = makeEnvironment({
+    async fetch() {
+      throw new TypeError("secret-bearing upstream detail");
+    }
+  });
+  const failed = await handleRequest(
+    await makeAccessRequest("/api/summary?days=30"),
+    failedEnv,
+    makeJwksFetch()
+  );
+  assert.equal(failed.status, 502);
+  const failedBody = await failed.json();
+  assert.equal(failedBody.management_stage, "collector_fetch");
+  assert.doesNotMatch(JSON.stringify(failedBody), /secret-bearing|collector-secret/i);
+
+  clearJwksCacheForTests();
+  const redirectedEnv = makeEnvironment({
+    async fetch() {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: "https://attacker.example/" }
+      });
+    }
+  });
+  const redirected = await handleRequest(
+    await makeAccessRequest("/api/summary?days=30"),
+    redirectedEnv,
+    makeJwksFetch()
+  );
+  assert.equal(redirected.status, 502);
+  assert.equal((await redirected.json()).management_stage, "collector_redirect");
 });
 
 test("raw IP reveal is POST-only, same-origin, explicitly confirmed, and actor-audited", async () => {

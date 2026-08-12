@@ -119,9 +119,10 @@ and rotate it immediately if exposed.
 
 The normal web control plane is the separate `analytics-admin/` Worker. It is
 protected by Cloudflare Access, validates the Access JWT again inside the
-Worker, and reaches this collector through a Service Binding. The browser never
-receives a bearer token. Full-IP reveal is deliberately restricted to a signed
-request from that private panel, so a bearer token alone cannot reveal it.
+Worker, and calls this collector's fixed production HTTPS endpoint with
+server-only credentials. The browser never receives a bearer token. Full-IP
+reveal is deliberately restricted to a signed request from that private panel,
+so a bearer token alone cannot reveal it.
 
 ```sh
 curl -H "Authorization: Bearer $ANALYTICS_ADMIN_TOKEN" \
@@ -136,6 +137,15 @@ ASN counts. The visits endpoint returns metadata plus masked IPs in pages of at
 most 50 rows; pass the returned `next_before` value as `before` for the next
 page. Use the Access-protected panel to reveal exactly one full IP and record
 the associated audit event.
+
+## Synthetic test records
+
+Records with a `/__test__/` path, `synthetic-test.invalid` referrer, and
+`synthetic-v1` key version are display-only test fixtures made from the
+documentation address ranges `192.0.2.0/24`, `198.51.100.0/24`,
+`203.0.113.0/24`, and `2001:db8::/32`. Their test key is intentionally public;
+it is accepted only when all synthetic markers match and is never used for a
+normal visit. Production visitor IPs continue to use the private Worker secret.
 
 ## Local verification
 

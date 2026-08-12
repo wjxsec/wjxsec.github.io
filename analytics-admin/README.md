@@ -23,8 +23,12 @@ existing collector Worker remains public for `POST /v1/visit`.
 
 ## Deploy
 
-The service binding targets the existing `wjxsec-visitor-collector` Worker.
-The rate-limit namespace must remain unique within the Cloudflare account.
+The admin Worker calls the fixed production HTTPS endpoint of
+`wjxsec-visitor-collector` and injects the collector credentials only on the
+server side. Redirects are rejected and the browser never sees those headers.
+This deployment mode works on the Workers Free plan; Service Bindings require
+Workers Standard pricing. The rate-limit namespace must remain unique within
+the Cloudflare account.
 
 Deploy in this order:
 
@@ -59,9 +63,11 @@ Worker as a defense-in-depth check beyond the Access policy.
 secret; it authenticates the Access actor attestation for raw-IP reveals.
 `ADMIN_AUDIT_HMAC_KEY` is an independent random value of at least 32 characters.
 
-5. Confirm the `COLLECTOR` Service Binding and `PANEL_RATE_LIMITER` binding from
-   `wrangler.jsonc`, then deploy the final admin version. Run Wrangler commands
-   from this directory (or pass its config explicitly):
+5. Confirm the fixed collector origin in `src/index.js`, the
+   `global_fetch_strictly_public` compatibility flag, and the
+   `PANEL_RATE_LIMITER` binding from `wrangler.jsonc`, then deploy the final
+   admin version. Run Wrangler commands from this directory (or pass its
+   config explicitly):
 
 ```sh
 npx wrangler deploy
