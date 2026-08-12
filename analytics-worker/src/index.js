@@ -166,7 +166,13 @@ async function handleSummary(request, env, url) {
     const [totals, countries, regions, cities, asns] = await Promise.all([
       selectFirst(
         env.DB,
-        `SELECT COUNT(*) AS events, COUNT(DISTINCT ip_hmac) AS unique_ip_hashes
+        `SELECT COUNT(*) AS events, COUNT(DISTINCT ip_hmac) AS unique_ip_hashes,
+          SUM(CASE WHEN encryption_key_version = 'synthetic-v1'
+            AND page_path LIKE '/__test__/%'
+            AND referrer_host = 'synthetic-test.invalid' THEN 1 ELSE 0 END) AS synthetic_events,
+          COUNT(DISTINCT CASE WHEN encryption_key_version = 'synthetic-v1'
+            AND page_path LIKE '/__test__/%'
+            AND referrer_host = 'synthetic-test.invalid' THEN ip_hmac END) AS synthetic_unique_ip_hashes
          FROM visitor_events WHERE observed_at >= ? AND expires_at > ?`,
         [since, now]
       ),
@@ -206,6 +212,8 @@ async function handleSummary(request, env, url) {
       range_end: new Date(now).toISOString(),
       events: Number(totals.events || 0),
       unique_ip_hashes: Number(totals.unique_ip_hashes || 0),
+      synthetic_events: Number(totals.synthetic_events || 0),
+      synthetic_unique_ip_hashes: Number(totals.synthetic_unique_ip_hashes || 0),
       countries,
       regions,
       cities,
@@ -253,6 +261,7 @@ async function handleVisits(request, env, url) {
         observed_at: record.observed_at,
         expires_at: record.expires_at,
         ip_masked: ipMasked,
+        synthetic: isSyntheticRecord(record),
         country_code: record.country_code,
         region_code: record.region_code,
         city: record.city,
@@ -470,12 +479,7 @@ function getCurrentEncryptionKeyVersion(env) {
 }
 
 function getEncryptionKeyForRecord(record, env) {
-  if (
-    record.encryption_key_version === SYNTHETIC_KEY_VERSION &&
-    typeof record.page_path === "string" &&
-    record.page_path.startsWith("/__test__/") &&
-    record.referrer_host === "synthetic-test.invalid"
-  ) {
+  if (isSyntheticRecord(record)) {
     return SYNTHETIC_TEST_KEY_BASE64;
   }
   if (record.encryption_key_version === getCurrentEncryptionKeyVersion(env)) {
@@ -491,6 +495,13 @@ function getEncryptionKeyForRecord(record, env) {
     return env.IP_ENCRYPTION_KEY_PREVIOUS;
   }
   throw new Error("No key is available for this record");
+}
+
+function isSyntheticRecord(record) {
+  return record.encryption_key_version === SYNTHETIC_KEY_VERSION &&
+    typeof record.page_path === "string" &&
+    record.page_path.startsWith("/__test__/") &&
+    record.referrer_host === "synthetic-test.invalid";
 }
 
 function hasPrivacySignal(request) {

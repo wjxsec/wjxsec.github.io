@@ -410,8 +410,8 @@ async function callCollector(env, path, { reveal = false, actorHash = "" } = {})
 
   let upstream;
   try {
-    const collectorFetch = env.COLLECTOR && typeof env.COLLECTOR.fetch === "function"
-      ? env.COLLECTOR.fetch.bind(env.COLLECTOR)
+    const collectorFetch = typeof env.COLLECTOR_FETCH_FOR_TESTS === "function"
+      ? env.COLLECTOR_FETCH_FOR_TESTS
       : globalThis.fetch.bind(globalThis);
     upstream = await collectorFetch(new Request(new URL(path, COLLECTOR_ORIGIN), {
       method: "GET",
@@ -906,6 +906,8 @@ const PANEL_SCRIPT = `(function () {
     error: document.getElementById("error"),
     events: document.getElementById("events"),
     uniqueSources: document.getElementById("unique-sources"),
+    eventNote: document.querySelectorAll(".metric-card small")[0],
+    uniqueNote: document.querySelectorAll(".metric-card small")[1],
     retention: document.getElementById("retention"),
     countries: document.getElementById("countries"),
     cities: document.getElementById("cities"),
@@ -980,6 +982,12 @@ const PANEL_SCRIPT = `(function () {
   function renderSummary(summary) {
     elements.events.textContent = formatNumber(summary.events);
     elements.uniqueSources.textContent = formatNumber(summary.unique_ip_hashes);
+    elements.eventNote.textContent = summary.synthetic_events
+      ? "\u5176\u4e2d " + formatNumber(summary.synthetic_events) + " \u6761\u5408\u6210\u6d4b\u8bd5\uff1b\u5730\u57df\u6392\u884c\u542b\u6d4b\u8bd5"
+      : "\u6240\u9009\u65f6\u95f4\u8303\u56f4";
+    elements.uniqueNote.textContent = summary.synthetic_unique_ip_hashes
+      ? "\u5176\u4e2d " + formatNumber(summary.synthetic_unique_ip_hashes) + " \u4e2a\u5408\u6210\u6d4b\u8bd5\u6e90"
+      : "\u52a0\u5bc6 IP \u54c8\u5e0c\u4f30\u7b97";
     elements.retention.textContent = formatNumber(summary.retention_days) + " 天";
     renderRankList(elements.countries, summary.countries, "country");
     renderRankList(elements.cities, summary.cities, "city");
@@ -1004,7 +1012,7 @@ const PANEL_SCRIPT = `(function () {
       appendCell(row, visit.ip_masked, true);
       appendCell(row, [visit.city, visit.region_code, visit.country_code].filter(Boolean).join(" / "));
       appendCell(row, visit.asn ? "AS" + visit.asn : "—");
-      appendCell(row, visit.page_path, true);
+      appendCell(row, visit.synthetic ? "[TEST] " + visit.page_path : visit.page_path, true);
       appendCell(row, visit.referrer_host);
       var actionCell = document.createElement("td");
       var button = document.createElement("button");

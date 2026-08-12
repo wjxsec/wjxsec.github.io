@@ -93,7 +93,7 @@ function makeEnvironment(collector) {
     PANEL_ORIGIN: origin,
     COLLECTOR_ADMIN_TOKEN: collectorToken,
     COLLECTOR_PANEL_HMAC_KEY: panelHmacKey,
-    COLLECTOR: collector,
+    COLLECTOR_FETCH_FOR_TESTS: collector.fetch.bind(collector),
     PANEL_RATE_LIMITER: makeLimiter()
   };
 }
@@ -251,6 +251,8 @@ test("the private panel requires Access and ships no browser-side administrator 
   const javascript = await script.text();
   assert.doesNotMatch(javascript, /collector-secret|Bearer\s|localStorage|sessionStorage|console\./i);
   assert.match(javascript, /X-WJXSEC-Admin-Action/);
+  assert.match(javascript, /synthetic_events/);
+  assert.match(javascript, /\[TEST\]/);
 });
 
 test("summary and list APIs only proxy fixed server-side requests with the secret", async () => {

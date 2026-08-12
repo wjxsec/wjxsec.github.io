@@ -328,7 +328,7 @@ test("explicitly marked synthetic records use only the public test key", async (
     id: 10,
     event_id: "0279fbe1-73db-4c4d-aedf-000000000101",
     observed_at: now - 1000,
-    expires_at: now + 90 * 24 * 60 * 60 * 1000,
+    expires_at: now - 1000 + 90 * 24 * 60 * 60 * 1000,
     encryption_key_version: SYNTHETIC_KEY_VERSION,
     country_code: "JP",
     region_code: "TEST-13",
@@ -350,6 +350,7 @@ test("explicitly marked synthetic records use only the public test key", async (
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.visits[0].ip_masked, "192.0.2.0");
+  assert.equal(body.visits[0].synthetic, true);
 
   record.page_path = "/";
   database.resultSets.push([record]);
@@ -361,7 +362,7 @@ test("the summary includes aggregated geography and ASN without returning raw IP
   const database = new FakeDatabase();
   const env = makeEnvironment(database);
   database.resultSets.push(
-    [{ events: 3, unique_ip_hashes: 2 }],
+    [{ events: 3, unique_ip_hashes: 2, synthetic_events: 1, synthetic_unique_ip_hashes: 1 }],
     [{ country: "CN", events: 3 }],
     [{ region: "SN", events: 3 }],
     [{ city: "Xi'an", events: 3 }],
@@ -373,6 +374,8 @@ test("the summary includes aggregated geography and ASN without returning raw IP
   assert.equal(response.status, 200);
   assert.equal(body.events, 3);
   assert.equal(body.unique_ip_hashes, 2);
+  assert.equal(body.synthetic_events, 1);
+  assert.equal(body.synthetic_unique_ip_hashes, 1);
   assert.deepEqual(body.cities, [{ city: "Xi'an", events: 3 }]);
   assert.deepEqual(body.asns, [{ asn: 4134, events: 3 }]);
   assert.equal("ip_address" in body, false);
