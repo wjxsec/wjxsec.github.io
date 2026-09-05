@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f4f1ea">
+  <title>我的阅读脉络｜微信读书个人分析</title>
+  <meta name="description" content="基于微信读书个人数据生成的离线阅读分析面板。">
+  <link rel="canonical" href="https://wjxsec.github.io/reading/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="阅读脉络｜个人阅读与知识版图">
+  <meta property="og:description" content="基于微信读书书架、阅读时长与笔记数据生成的个人阅读画像。">
+  <meta property="og:url" content="https://wjxsec.github.io/reading/">
+  <meta property="og:image" content="https://wjxsec.github.io/reading/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    :root {
+      --paper: #f4f1ea;
+      --paper-2: #ebe6dc;
+      --ink: #18332d;
+      --ink-2: #34524a;
+      --muted: #6e7c75;
+      --line: rgba(24, 51, 45, .13);
+      --card: rgba(255, 255, 255, .72);
+      --card-solid: #fbfaf6;
+      --green: #1f6b58;
+      --green-2: #3e8d72;
+      --mint: #b9d5c8;
+      --lime: #c7da86;
+      --amber: #dc9253;
+      --rose: #bd6c68;
+      --shadow: 0 16px 50px rgba(28, 53, 45, .08);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --max: 1380px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 2%, rgba(199, 218, 134, .20), transparent 28rem),
+        radial-gradient(circle at 95% 18%, rgba(185, 213, 200, .28), transparent 30rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+
+    button, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    svg { display: block; }
+    :focus-visible { outline: 3px solid rgba(31, 107, 88, .34); outline-offset: 3px; }
+
+    .shell { width: min(var(--max), calc(100% - 40px)); margin: 0 auto; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(18px);
+      background: rgba(244, 241, 234, .82);
+      border-bottom: 1px solid rgba(24, 51, 45, .08);
+    }
+    .topbar-inner {
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      width: 36px; height: 36px; border-radius: 11px;
+      display: grid; place-items: center;
+      color: white; background: var(--ink);
+      box-shadow: 0 8px 18px rgba(24, 51, 45, .18);
+      flex: 0 0 auto;
+    }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-name { font-weight: 760; letter-spacing: -.02em; white-space: nowrap; }
+    .brand-meta { font-size: 12px; color: var(--muted); margin-left: 9px; font-weight: 500; }
+    .nav { display: flex; gap: 4px; align-items: center; overflow-x: auto; scrollbar-width: none; }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav a { font-size: 13px; color: var(--muted); padding: 8px 10px; border-radius: 9px; white-space: nowrap; }
+    .nav a:hover { color: var(--ink); background: rgba(255,255,255,.55); }
+    .top-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+    .icon-button {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.62);
+      min-height: 38px;
+      padding: 0 12px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: .2s ease;
+      box-shadow: 0 4px 14px rgba(24,51,45,.04);
+    }
+    .icon-button:hover { transform: translateY(-1px); background: white; }
+    .icon-button svg { width: 17px; height: 17px; }
+    .icon-button .btn-text { font-size: 13px; font-weight: 650; }
+
+    main { padding: 28px 0 72px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 400px;
+      padding: 42px;
+      border-radius: 34px;
+      background:
+        linear-gradient(128deg, rgba(255,255,255,.92), rgba(255,255,255,.60)),
+        var(--card-solid);
+      border: 1px solid rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(340px, .84fr);
+      gap: 50px;
+      isolation: isolate;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 420px; height: 420px;
+      right: -120px; top: -180px;
+      border-radius: 50%;
+      border: 70px solid rgba(199,218,134,.24);
+      z-index: -1;
+    }
+    .eyebrow { display: flex; align-items: center; gap: 9px; color: var(--green); font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 25px; height: 2px; background: var(--green); border-radius: 2px; }
+    h1 { margin: 18px 0 14px; font-size: clamp(38px, 5vw, 66px); line-height: 1.08; letter-spacing: -.055em; max-width: 800px; }
+    .hero-copy { color: var(--ink-2); font-size: clamp(15px, 1.45vw, 18px); max-width: 670px; margin: 0; }
+    .hero-copy strong { color: var(--green); }
+    .hero-bottom { display: flex; align-items: center; gap: 20px; margin-top: 34px; flex-wrap: wrap; }
+    .pulse-note { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green-2); box-shadow: 0 0 0 5px rgba(62,141,114,.12); }
+    .hero-insight {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--ink);
+      color: white;
+      border-radius: 25px;
+      padding: 28px;
+      box-shadow: 0 20px 36px rgba(24,51,45,.18);
+    }
+    .hero-insight .label { font-size: 12px; color: rgba(255,255,255,.58); letter-spacing: .08em; }
+    .hero-insight .big { font-size: clamp(43px, 5vw, 68px); line-height: 1; margin: 24px 0 12px; letter-spacing: -.055em; }
+    .hero-insight .unit { font-size: 16px; letter-spacing: 0; color: var(--lime); margin-left: 5px; }
+    .hero-insight p { color: rgba(255,255,255,.72); margin: 0; font-size: 14px; }
+    .mini-trend { display: grid; grid-template-columns: repeat(9, 1fr); align-items: end; gap: 5px; height: 72px; margin-top: 25px; }
+    .mini-trend i { display:block; background: rgba(255,255,255,.16); border-radius: 5px 5px 2px 2px; min-height: 4px; }
+    .mini-trend i.current { background: var(--lime); }
+    .hero-callout { margin-top: 20px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 18px; display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: rgba(255,255,255,.8); }
+    .hero-callout svg { width: 17px; height: 17px; color: var(--lime); flex: 0 0 auto; margin-top: 1px; }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 16px; }
+    .kpi {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.86);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      box-shadow: 0 10px 28px rgba(24,51,45,.055);
+      min-height: 132px;
+    }
+    .kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+    .kpi-icon { width: 30px; height: 30px; display:grid; place-items:center; border-radius: 9px; color: var(--green); background: rgba(185,213,200,.35); }
+    .kpi-icon svg { width: 16px; height: 16px; }
+    .kpi-value { font-size: clamp(28px, 3vw, 39px); line-height: 1; font-weight: 760; letter-spacing: -.045em; margin-top: 18px; }
+    .kpi-unit { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 3px; letter-spacing: 0; }
+    .kpi-foot { color: var(--muted); font-size: 12px; margin-top: 10px; }
+    .kpi-foot strong { color: var(--green); font-weight: 700; }
+
+    .section { margin-top: 60px; scroll-margin-top: 95px; }
+    .section-head { display:flex; align-items:flex-end; justify-content:space-between; gap: 20px; margin-bottom: 20px; }
+    .section-kicker { color: var(--green); font-size: 11px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; }
+    h2 { font-size: clamp(25px, 3vw, 36px); letter-spacing: -.045em; line-height: 1.15; margin: 0; }
+    .section-note { color: var(--muted); font-size: 13px; max-width: 520px; text-align: right; }
+    .grid-2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr); gap: 16px; }
+    .grid-even { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.88);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 12px 35px rgba(24,51,45,.055);
+      padding: 26px;
+      min-width: 0;
+    }
+    .card.dark { background: var(--ink); color: white; border-color: transparent; }
+    .card-title { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 22px; }
+    .card-title h3 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .card-title p { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
+    .dark .card-title p { color: rgba(255,255,255,.56); }
+    .segmented { display: inline-flex; padding: 3px; border-radius: 10px; background: rgba(24,51,45,.06); gap: 2px; }
+    .segmented button { border:0; background:transparent; border-radius:8px; padding:5px 9px; font-size:12px; color:var(--muted); }
+    .segmented button.active { color:var(--ink); background:white; box-shadow:0 2px 8px rgba(24,51,45,.08); }
+
+    .chart-wrap { width: 100%; min-height: 265px; position: relative; }
+    .chart-wrap svg { width: 100%; height: 265px; overflow: visible; }
+    .chart-grid { stroke: rgba(24,51,45,.09); stroke-width: 1; }
+    .chart-label { fill: var(--muted); font-size: 10px; }
+    .chart-area { fill: url(#areaGradient); }
+    .chart-line { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-point { fill: var(--card-solid); stroke: var(--green); stroke-width: 2.5; }
+    .chart-point.is-active { fill: var(--green); }
+    .bar { fill: var(--mint); rx: 6; transition: opacity .2s, transform .2s; transform-box: fill-box; transform-origin: bottom; }
+    .bar:hover { opacity: .78; transform: scaleY(.98); }
+    .bar.current { fill: var(--green); }
+    .chart-tip {
+      position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-112%);
+      background:var(--ink); color:white; padding:7px 9px; border-radius:9px; font-size:11px; white-space:nowrap;
+      box-shadow:0 8px 20px rgba(24,51,45,.18); transition:opacity .1s;
+    }
+    .chart-tip.show { opacity:1; }
+    .chart-legend { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; color:var(--muted); font-size:11px; border-top:1px solid var(--line); padding-top:14px; }
+    .chart-legend strong { color:var(--ink); }
+
+    .year-summary { display:grid; gap: 14px; }
+    .year-stat { padding-bottom:14px; border-bottom:1px solid var(--line); }
+    .year-stat:last-child { border-bottom:0; padding-bottom:0; }
+    .year-stat .num { font-size:28px; font-weight:750; letter-spacing:-.04em; }
+    .year-stat .desc { font-size:12px; color:var(--muted); margin-top:3px; }
+    .delta-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--green); background:rgba(185,213,200,.35); border-radius:999px; padding:4px 7px; margin-left:6px; vertical-align:middle; }
+
+    .rhythm-layout { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr); gap:24px; align-items:center; }
+    .clock { position:relative; width:min(280px,100%); aspect-ratio:1; margin:auto; }
+    .clock svg { width:100%; height:100%; transform:rotate(-90deg); }
+    .clock-track { fill:none; stroke:rgba(255,255,255,.09); stroke-width:14; }
+    .clock-seg { fill:none; stroke-width:14; stroke-linecap:round; }
+    .clock-seg.muted { stroke:rgba(255,255,255,.16); }
+    .clock-seg.active { stroke:var(--lime); filter:drop-shadow(0 0 7px rgba(199,218,134,.2)); }
+    .clock-center { position:absolute; inset:27%; border-radius:50%; display:grid; place-items:center; text-align:center; background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.08); }
+    .clock-center strong { font-size:22px; letter-spacing:-.04em; }
+    .clock-center span { display:block; font-size:10px; color:rgba(255,255,255,.5); margin-top:2px; }
+    .clock-label { position:absolute; font-size:10px; color:rgba(255,255,255,.48); }
+    .clock-label.top { top:-2px; left:50%; transform:translateX(-50%); }
+    .clock-label.right { right:-5px; top:50%; transform:translateY(-50%); }
+    .clock-label.bottom { bottom:-2px; left:50%; transform:translateX(-50%); }
+    .clock-label.left { left:-5px; top:50%; transform:translateY(-50%); }
+    .rhythm-copy h3 { font-size:30px; margin:0 0 12px; letter-spacing:-.045em; }
+    .rhythm-copy p { color:rgba(255,255,255,.68); font-size:14px; margin:0; }
+    .rhythm-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:24px; }
+    .rhythm-metric { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.075); border-radius:14px; padding:14px; }
+    .rhythm-metric strong { display:block; font-size:21px; color:var(--lime); }
+    .rhythm-metric span { font-size:11px; color:rgba(255,255,255,.5); }
+    .monthly-bars { display:grid; grid-template-columns:repeat(12,1fr); gap:7px; align-items:end; height:175px; padding-top:12px; }
+    .month-col { height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px; }
+    .month-col .fill { width:100%; max-width:24px; border-radius:7px 7px 3px 3px; background:var(--mint); min-height:2px; position:relative; transition:.2s ease; }
+    .month-col .fill.peak { background:var(--green); }
+    .month-col .fill.future { background:transparent; border:1px dashed rgba(24,51,45,.16); min-height:8px !important; }
+    .month-col span { color:var(--muted); font-size:10px; }
+    .month-col:hover .fill:not(.future) { filter:brightness(.92); transform:translateY(-2px); }
+
+    .category-layout { display:grid; grid-template-columns:minmax(330px,.9fr) minmax(0,1.1fr); gap:24px; align-items:center; }
+    .map-box { min-height:390px; position:relative; }
+    .bubble { position:absolute; border-radius:50%; display:grid; place-items:center; text-align:center; color:var(--ink); border:1px solid rgba(255,255,255,.76); box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 7px 18px rgba(24,51,45,.06); transition:.22s ease; }
+    .bubble:hover { transform:scale(1.04); z-index:3; }
+    .bubble strong { display:block; font-size:13px; }
+    .bubble small { display:block; font-size:10px; opacity:.66; }
+    .bubble.b1 { width:140px;height:140px;left:0;top:4%;background:#b9d5c8; }
+    .bubble.b2 { width:140px;height:140px;left:31%;top:0;background:#d9dfa9; }
+    .bubble.b3 { width:134px;height:134px;left:61%;top:3%;background:#e7c9a7; }
+    .bubble.b4 { width:128px;height:128px;left:14%;top:39%;background:#cbd6ce; }
+    .bubble.b5 { width:125px;height:125px;left:44%;top:38%;background:#c6d6b3; }
+    .bubble.b6 { width:122px;height:122px;left:69%;top:42%;background:#dfc2bb; }
+    .bubble.b7 { width:93px;height:93px;left:2%;top:70%;background:#d2cdbd; }
+    .bubble.b8 { width:93px;height:93px;left:26%;top:71%;background:#ddd6c8; }
+    .bubble.b9 { width:75px;height:75px;left:51%;top:72%;background:#dad9cf; }
+    .category-list { display:grid; gap:14px; }
+    .cat-row { display:grid; grid-template-columns:92px 1fr 76px; align-items:center; gap:12px; }
+    .cat-name { font-size:12px; font-weight:650; }
+    .cat-track { height:9px; background:rgba(24,51,45,.07); border-radius:999px; overflow:hidden; }
+    .cat-track i { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,var(--green),var(--green-2)); }
+    .cat-num { text-align:right; font-size:12px; color:var(--muted); }
+    .cat-num strong { color:var(--ink); }
+
+    .completion-layout { display:grid; grid-template-columns:200px minmax(0,1fr); gap:28px; align-items:center; }
+    .donut { width:190px; aspect-ratio:1; position:relative; margin:auto; }
+    .donut svg { width:100%; height:100%; transform:rotate(-90deg); }
+    .donut circle { fill:none; stroke-width:14; }
+    .donut-bg { stroke:rgba(24,51,45,.08); }
+    .donut-fg { stroke:var(--green); stroke-linecap:round; }
+    .donut-center { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
+    .donut-center strong { font-size:33px; letter-spacing:-.05em; }
+    .donut-center span { color:var(--muted); font-size:11px; }
+    .progress-groups { display:grid; gap:13px; }
+    .progress-group { display:grid; grid-template-columns:70px 1fr 30px; align-items:center; gap:10px; font-size:11px; color:var(--muted); }
+    .progress-track { height:8px; border-radius:99px; background:rgba(24,51,45,.07); overflow:hidden; }
+    .progress-track i { display:block; height:100%; border-radius:99px; background:var(--mint); }
+    .progress-group:first-child i { background:var(--green); }
+    .progress-group b { color:var(--ink); text-align:right; }
+    .note-total { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+    .note-total .big { font-size:50px; line-height:1; font-weight:760; letter-spacing:-.055em; }
+    .note-total .sub { font-size:12px; color:var(--muted); margin-top:7px; }
+    .note-composition { display:flex; gap:5px; height:11px; min-width:190px; flex:1; max-width:300px; }
+    .note-composition i { height:100%; border-radius:99px; }
+    .note-composition .n1 { background:var(--green); }
+    .note-composition .n2 { background:var(--lime); }
+    .note-composition .n3 { background:var(--amber); min-width:3px; }
+    .note-legend { display:flex; gap:15px; flex-wrap:wrap; margin-top:10px; font-size:10px; color:var(--muted); }
+    .note-legend i { display:inline-block; width:7px;height:7px;border-radius:50%;margin-right:5px; }
+    .note-books { margin-top:18px; display:grid; gap:12px; }
+    .note-book { display:grid; grid-template-columns:38px minmax(0,1fr) auto; gap:11px; align-items:center; }
+    .rank { width:32px;height:32px;border-radius:10px;background:rgba(185,213,200,.28);display:grid;place-items:center;font-size:11px;color:var(--green);font-weight:750; }
+    .book-name { min-width:0; }
+    .book-name strong { display:block; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .book-name span { display:block; color:var(--muted); font-size:10px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .note-count { font-size:12px; font-weight:700; }
+
+    .recent-list { display:grid; gap:10px; }
+    .recent-item { display:grid; grid-template-columns:58px minmax(0,1fr) minmax(110px,.55fr) 74px; gap:15px; align-items:center; padding:12px; border-radius:16px; border:1px solid transparent; transition:.2s ease; }
+    .recent-item:hover { background:rgba(255,255,255,.56); border-color:rgba(255,255,255,.8); }
+    .book-cover { width:48px;height:62px;border-radius:7px 10px 10px 7px;display:grid;place-items:center;color:white;box-shadow:5px 7px 13px rgba(24,51,45,.12);position:relative;overflow:hidden;font-weight:760; }
+    .book-cover::before { content:"";position:absolute;left:4px;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.25); }
+    .book-cover::after { content:"";position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.18),transparent 42%); }
+    .cover-1{background:#2f675b}.cover-2{background:#a06a4f}.cover-3{background:#6c6e47}.cover-4{background:#596f8b}.cover-5{background:#875f69}
+    .recent-main { min-width:0; }
+    .recent-main h4 { margin:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .recent-main p { margin:4px 0 0;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .reading-progress { min-width:0; }
+    .reading-progress .meta { display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px;margin-bottom:6px; }
+    .reading-progress .track { height:7px;background:rgba(24,51,45,.07);border-radius:99px;overflow:hidden; }
+    .reading-progress .track i { display:block;height:100%;background:var(--green-2);border-radius:99px;min-width:2px; }
+    .recent-time { text-align:right;font-size:11px;color:var(--muted); }
+
+    .insight-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px; }
+    .insight-card { padding:24px;border-radius:22px;min-height:220px;position:relative;overflow:hidden; }
+    .insight-card:nth-child(1){background:#17362f;color:white}.insight-card:nth-child(2){background:#dce4bd}.insight-card:nth-child(3){background:#ead8c5}
+    .insight-no { font-size:11px;opacity:.55;letter-spacing:.1em; }
+    .insight-card h3 { font-size:21px;line-height:1.25;letter-spacing:-.03em;margin:30px 0 10px;max-width:260px; }
+    .insight-card p { font-size:12px;line-height:1.65;margin:0;opacity:.72;max-width:330px; }
+    .insight-card .spark { position:absolute;right:-25px;bottom:-24px;width:125px;height:125px;border:28px solid rgba(255,255,255,.09);border-radius:50%; }
+    .insight-card:nth-child(n+2) .spark { border-color:rgba(24,51,45,.06); }
+
+    .gap-list { display:grid;gap:12px; }
+    .gap-item { display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:13px;align-items:center;padding:15px 0;border-bottom:1px solid var(--line); }
+    .gap-item:last-child{border-bottom:0}.gap-icon{width:40px;height:40px;border-radius:13px;background:rgba(185,213,200,.28);display:grid;place-items:center;color:var(--green)}.gap-icon svg{width:18px;height:18px}.gap-item h4{font-size:13px;margin:0}.gap-item p{font-size:11px;color:var(--muted);margin:3px 0 0}.gap-tag{font-size:10px;color:var(--rose);background:rgba(189,108,104,.11);border-radius:99px;padding:4px 8px;white-space:nowrap}
+    .coverage-note { margin-top:16px;background:rgba(24,51,45,.045);border-radius:13px;padding:12px 14px;font-size:11px;color:var(--muted); }
+
+    .plan { background:var(--ink);color:white;border-radius:32px;padding:32px;box-shadow:0 20px 45px rgba(24,51,45,.17); }
+    .plan-head{display:flex;justify-content:space-between;gap:25px;align-items:flex-end;margin-bottom:28px}.plan-head h2{color:white}.plan-head p{max-width:480px;color:rgba(255,255,255,.6);font-size:12px;margin:0;text-align:right}.plan-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.11);border-radius:22px;overflow:hidden}.phase{background:#18332d;padding:25px;min-height:240px}.phase-label{font-size:10px;color:var(--lime);letter-spacing:.12em}.phase h3{font-size:20px;margin:14px 0 16px;letter-spacing:-.025em}.phase ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}.phase li{display:flex;gap:9px;color:rgba(255,255,255,.67);font-size:12px;line-height:1.55}.phase li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--lime);margin-top:7px;flex:0 0 auto}.phase-goal{margin-top:20px;padding-top:15px;border-top:1px solid rgba(255,255,255,.09);font-size:11px;color:rgba(255,255,255,.48)}.phase-goal strong{color:white}
+
+    .method-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:12px; }
+    .method { padding:17px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.34); }
+    .method strong { font-size:12px;display:block;margin-bottom:5px; }
+    .method p { margin:0;color:var(--muted);font-size:10px;line-height:1.55; }
+    footer { margin-top:42px;padding:20px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;color:var(--muted);font-size:10px; }
+
+    .private .sensitive { color: transparent !important; text-shadow: 0 0 9px rgba(24,51,45,.42); user-select:none; }
+    .private .dark .sensitive, .private .plan .sensitive { text-shadow:0 0 9px rgba(255,255,255,.55); }
+    .private .book-cover span { visibility:hidden; }
+    .private .book-cover::before { left:4px; }
+    .public-safe #privacyToggle { display:none; }
+    .private .privacy-label::after { content:"已隐藏"; }
+    .privacy-label::after { content:"隐藏书名"; }
+    .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    .fade-up { animation:fadeUp .55s both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none} }
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.fade-up{animation:none}.icon-button,.bubble,.month-col .fill{transition:none}}
+    @media print {
+      body { background:#fff; }
+      .topbar { display:none; }
+      .shell { width:100%; }
+      main { padding:0; }
+      .hero,.card,.plan,.kpi { box-shadow:none; break-inside:avoid; }
+      .section { break-inside:avoid; margin-top:32px; }
+      .hero { min-height:0; }
+    }
+
+    @media (max-width: 1050px) {
+      .nav { display:none; }
+      .hero { grid-template-columns:1fr; gap:24px; }
+      .hero-insight { min-height:280px; }
+      .kpis { grid-template-columns:repeat(2,1fr); }
+      .grid-2,.category-layout { grid-template-columns:1fr; }
+      .map-box { max-width:620px;width:100%;margin:auto; }
+      .insight-grid { grid-template-columns:1fr; }
+      .insight-card { min-height:180px; }
+    }
+    @media (max-width: 760px) {
+      .shell,.topbar-inner{width:min(100% - 24px,var(--max))}
+      .topbar-inner{min-height:62px}.brand-meta{display:none}.icon-button .btn-text{display:none}.icon-button{width:38px;padding:0;justify-content:center}
+      main{padding-top:14px}.hero{padding:26px;border-radius:26px;min-height:0}.hero::after{width:250px;height:250px;border-width:45px;right:-95px;top:-100px}h1{font-size:40px}.hero-bottom{margin-top:24px}.hero-insight{padding:22px;min-height:250px}
+      .kpis{grid-template-columns:repeat(2,1fr);gap:10px}.kpi{padding:16px;min-height:122px}.kpi-value{font-size:29px}
+      .section{margin-top:44px}.section-head{align-items:flex-start;flex-direction:column;gap:8px}.section-note{text-align:left}.grid-even{grid-template-columns:1fr}.card{padding:20px;border-radius:22px}.card-title{align-items:flex-start;flex-direction:column}
+      .rhythm-layout{grid-template-columns:1fr}.clock{width:230px}.category-layout{gap:12px}.map-box{min-height:350px;transform:scale(.9);transform-origin:center top;margin-bottom:-28px}.cat-row{grid-template-columns:78px 1fr 68px}
+      .completion-layout{grid-template-columns:1fr}.note-total{align-items:flex-start;flex-direction:column}.note-composition{width:100%;max-width:none}.recent-item{grid-template-columns:50px minmax(0,1fr) 54px;gap:10px}.reading-progress{grid-column:2 / 4}.recent-time{grid-column:3;grid-row:1}.book-cover{width:42px;height:56px}.recent-main h4{font-size:13px}
+      .plan{padding:22px;border-radius:25px}.plan-head{align-items:flex-start;flex-direction:column}.plan-head p{text-align:left}.plan-phases{grid-template-columns:1fr}.method-grid{grid-template-columns:repeat(2,1fr)}footer{flex-direction:column}
+    }
+    @media (max-width:430px){.kpis{grid-template-columns:1fr 1fr}.kpi{padding:14px}.kpi-head span:first-child{font-size:11px}.kpi-icon{display:none}.kpi-value{font-size:25px}.hero{padding:22px}h1{font-size:35px}.map-box{transform:scale(.78);margin-left:-30px;margin-right:-30px;margin-bottom:-70px}.method-grid{grid-template-columns:1fr}.top-actions{gap:5px}}
+  </style>
+</head>
+<body class="public-safe">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" aria-label="阅读分析面板">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.7c2.8-.7 5.4-.1 8 1.8v11c-2.6-1.9-5.2-2.5-8-1.8z"/><path d="M20 5.7c-2.8-.7-5.4-.1-8 1.8v11c2.6-1.9 5.2-2.5 8-1.8z"/></svg>
+        </span>
+        <div class="brand-name">阅读脉络 <span class="brand-meta">数据截至 2026.09.05</span></div>
+      </div>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#overview">总览</a><a href="#trend">趋势</a><a href="#rhythm">节律</a><a href="#map">知识地图</a><a href="#depth">深度</a><a href="#gaps">提升</a><a href="#plan">行动方案</a>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-button" id="privacyToggle" type="button" aria-pressed="false" aria-label="隐藏全部书名和作者">
+          <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.8 12s3.3-6 9.2-6 9.2 6 9.2 6-3.3 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
+          <span class="btn-text privacy-label"></span>
+        </button>
+        <button class="icon-button" id="printButton" type="button" aria-label="打印或保存为 PDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/><path d="M17 12h.01"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero fade-up" id="overview">
+      <div>
+        <div class="eyebrow">Personal Reading Atlas · 2026</div>
+        <h1>你正在把阅读，<br>变成一张<span style="color:var(--green)">思考地图</span>。</h1>
+        <p class="hero-copy">今年的阅读投入已经来到 <strong>111.8 小时</strong>，是去年全年的 2.6 倍。偏好从心理逐渐扩展到个人成长、文学与社会观察，阅读正在从“广泛收藏”走向“主题式深潜”。</p>
+        <div class="hero-bottom">
+          <span class="pulse-note"><i class="pulse-dot"></i>公开版 · 已从源码移除书名与作者</span>
+          <span class="pulse-note">累计阅读 538 天</span>
+        </div>
+      </div>
+      <aside class="hero-insight" aria-label="累计阅读时长">
+        <div>
+          <div class="label">累计阅读时长 / ALL TIME</div>
+          <div class="big">213.8<span class="unit">小时</span></div>
+          <p>约等于 26.7 个 8 小时工作日的专注阅读。</p>
+        </div>
+        <div>
+          <div class="mini-trend" aria-label="2020 至 2026 年阅读时长趋势">
+            <i style="height:2.3%"></i><i style="height:3.3%"></i><i style="height:17.2%"></i><i style="height:20.8%"></i><i style="height:9.4%"></i><i style="height:38.3%"></i><i class="current" style="height:100%"></i>
+          </div>
+          <div class="hero-callout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 15 4-4 3 3 7-8"/><path d="M14 6h5v5"/></svg>
+            <span>2026 年已贡献累计时长的 52.3%，是记录以来最密集的一年。</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="kpis" aria-label="核心指标">
+      <article class="kpi"><div class="kpi-head"><span>总书架</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.7c2.8-.7 5.4-.1 8 1.8v11c-2.6-1.9-5.2-2.5-8-1.8z"/><path d="M20 5.7c-2.8-.7-5.4-.1-8 1.8v11c2.6-1.9 5.2-2.5 8-1.8z"/></svg></span></div><div class="kpi-value">217<span class="kpi-unit">项</span></div><div class="kpi-foot">216 本书 · 0 专辑 · 1 个文章收藏入口</div></article>
+      <article class="kpi"><div class="kpi-head"><span>2026 阅读</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div><div class="kpi-value">111.8<span class="kpi-unit">小时</span></div><div class="kpi-foot"><strong>↑ 160.9%</strong> 对比 2025 全年</div></article>
+      <article class="kpi"><div class="kpi-head"><span>笔记总数</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg></span></div><div class="kpi-value">3,103<span class="kpi-unit">条</span></div><div class="kpi-foot">覆盖 55 本书 · 平均 56.4 条/本</div></article>
+      <article class="kpi"><div class="kpi-head"><span>今年阅读日</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg></span></div><div class="kpi-value">146<span class="kpi-unit">天</span></div><div class="kpi-foot">活跃日均 45.9 分钟</div></article>
+    </section>
+
+    <section class="section" id="trend">
+      <div class="section-head"><div><div class="section-kicker">Momentum</div><h2>年度 / 月度趋势</h2></div><div class="section-note">时长统一由秒换算为小时；2026 年为截至 9 月 5 日的进行中数据。</div></div>
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-title"><div><h3>年度阅读时长</h3><p>2020—2026 · 小时</p></div><div class="segmented" aria-label="趋势指标"><button class="active" type="button">时长</button><button type="button" disabled title="当前仅展示时长">阅读日</button></div></div>
+          <div class="chart-wrap" id="yearChart" aria-label="年度阅读时长折线图"></div>
+          <div class="chart-legend"><span>起点 <strong>2020 · 2.6h</strong></span><span>峰值 <strong>2026 · 111.8h</strong></span><span>累计 <strong>213.8h</strong></span></div>
+        </article>
+        <aside class="card">
+          <div class="card-title"><div><h3>今年的加速度</h3><p>与完整历史年度对比</p></div></div>
+          <div class="year-summary">
+            <div class="year-stat"><div><span class="num">2.6×</span><span class="delta-pill">新高</span></div><div class="desc">2026 时长 / 2025 全年时长</div></div>
+            <div class="year-stat"><div class="num">+28<span style="font-size:14px"> 天</span></div><div class="desc">比 2025 全年更多的阅读日</div></div>
+            <div class="year-stat"><div class="num">45.9<span style="font-size:14px"> 分钟</span></div><div class="desc">2026 活跃日平均阅读时长</div></div>
+            <div class="year-stat"><div class="num">5<span style="font-size:14px"> 本</span></div><div class="desc">2026 年读完 · 与 2025 全年持平</div></div>
+          </div>
+        </aside>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title"><div><h3>2026 月度节奏</h3><p>3 月与 4 月形成高峰；9 月为截至 5 日，10—12 月尚未发生</p></div><div style="font-size:12px;color:var(--muted)">峰值月 <strong style="color:var(--green)">3 月 · 26.7h</strong></div></div>
+        <div class="monthly-bars" id="monthBars" aria-label="2026 每月阅读时长柱状图"></div>
+      </div>
+    </section>
+
+    <section class="section" id="rhythm">
+      <div class="section-head"><div><div class="section-kicker">Rhythm</div><h2>阅读节律</h2></div><div class="section-note">时段数组按 06:00 至次日 05:00 排列；峰值依据源数据计算。</div></div>
+      <div class="grid-even">
+        <article class="card dark">
+          <div class="rhythm-layout">
+            <div class="clock" aria-label="偏好下午与夜晚阅读">
+              <svg viewBox="0 0 160 160"><circle class="clock-track" cx="80" cy="80" r="58"/><circle class="clock-seg muted" cx="80" cy="80" r="58" stroke-dasharray="80 285" stroke-dashoffset="-10"/><circle class="clock-seg active" cx="80" cy="80" r="58" stroke-dasharray="145 220" stroke-dashoffset="-91"/></svg>
+              <div class="clock-center"><div><strong>午后 → 夜晚</strong><span>偏好阅读时段</span></div></div>
+              <span class="clock-label top">00:00</span><span class="clock-label right">06:00</span><span class="clock-label bottom">12:00</span><span class="clock-label left">18:00</span>
+            </div>
+            <div class="rhythm-copy"><h3>你的专注，更容易在后半天展开。</h3><p>把重阅读安排在午后或夜晚，把晨间留给回顾与整理，更贴合已有节律。</p><div class="rhythm-metrics"><div class="rhythm-metric"><strong>12:00</strong><span>午间阅读峰值</span></div><div class="rhythm-metric"><strong>23:00</strong><span>夜间阅读峰值</span></div></div></div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>稳定度观察</h3><p>从“偶发长读”转向“更长的活跃日”</p></div></div>
+          <div class="category-list">
+            <div class="cat-row"><span class="cat-name">2022</span><span class="cat-track"><i style="width:32%"></i></span><span class="cat-num"><strong>14.8</strong> 分/日</span></div>
+            <div class="cat-row"><span class="cat-name">2023</span><span class="cat-track"><i style="width:38%"></i></span><span class="cat-num"><strong>17.4</strong> 分/日</span></div>
+            <div class="cat-row"><span class="cat-name">2024</span><span class="cat-track"><i style="width:16%"></i></span><span class="cat-num"><strong>7.2</strong> 分/日</span></div>
+            <div class="cat-row"><span class="cat-name">2025</span><span class="cat-track"><i style="width:48%"></i></span><span class="cat-num"><strong>21.8</strong> 分/日</span></div>
+            <div class="cat-row"><span class="cat-name">2026</span><span class="cat-track"><i style="width:100%"></i></span><span class="cat-num"><strong>45.9</strong> 分/日</span></div>
+          </div>
+          <div class="coverage-note">口径：年度总时长 ÷ 当年阅读日。2026 的单个活跃日投入，约为 2025 年的 2.1 倍。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="map">
+      <div class="section-head"><div><div class="section-kicker">Knowledge Map</div><h2>分类 / 知识地图</h2></div><div class="section-note">气泡大小代表书架数量（未分类 42 本未纳入地图）；右侧按 2026 阅读时长排序。</div></div>
+      <article class="card">
+        <div class="category-layout">
+          <div class="map-box" aria-label="书架分类气泡图">
+            <div class="bubble b1"><div><strong>文学</strong><small>25 本</small></div></div><div class="bubble b2"><div><strong>经济理财</strong><small>25 本</small></div></div><div class="bubble b3"><div><strong>心理</strong><small>23 本</small></div></div><div class="bubble b4"><div><strong>个人成长</strong><small>21 本</small></div></div><div class="bubble b5"><div><strong>精品小说</strong><small>20 本</small></div></div><div class="bubble b6"><div><strong>哲学宗教</strong><small>19 本</small></div></div><div class="bubble b7"><div><strong>历史</strong><small>11 本</small></div></div><div class="bubble b8"><div><strong>政治军事</strong><small>11 本</small></div></div><div class="bubble b9"><div><strong>科学技术</strong><small>7 本</small></div></div>
+          </div>
+          <div>
+            <div class="card-title"><div><h3>2026 主题投入</h3><p>阅读时长 · 小时</p></div></div>
+            <div class="category-list">
+              <div class="cat-row"><span class="cat-name">个人成长</span><span class="cat-track"><i style="width:100%"></i></span><span class="cat-num"><strong>25.2h</strong> · 7本</span></div>
+              <div class="cat-row"><span class="cat-name">心理</span><span class="cat-track"><i style="width:84.6%"></i></span><span class="cat-num"><strong>21.3h</strong> · 6本</span></div>
+              <div class="cat-row"><span class="cat-name">文学</span><span class="cat-track"><i style="width:79%"></i></span><span class="cat-num"><strong>19.9h</strong> · 6本</span></div>
+              <div class="cat-row"><span class="cat-name">精品小说</span><span class="cat-track"><i style="width:64%"></i></span><span class="cat-num"><strong>16.1h</strong> · 4本</span></div>
+              <div class="cat-row"><span class="cat-name">哲学宗教</span><span class="cat-track"><i style="width:30.6%"></i></span><span class="cat-num"><strong>7.7h</strong> · 1本</span></div>
+              <div class="cat-row"><span class="cat-name">政治军事</span><span class="cat-track"><i style="width:22.6%"></i></span><span class="cat-num"><strong>5.7h</strong> · 2本</span></div>
+              <div class="cat-row"><span class="cat-name">人物传记</span><span class="cat-track"><i style="width:22.2%"></i></span><span class="cat-num"><strong>5.6h</strong> · 1本</span></div>
+              <div class="cat-row"><span class="cat-name">经济理财</span><span class="cat-track"><i style="width:15.9%"></i></span><span class="cat-num"><strong>4.0h</strong> · 2本</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" id="depth">
+      <div class="section-head"><div><div class="section-kicker">Depth</div><h2>完成与笔记深度</h2></div><div class="section-note">书架完成度与笔记书目进度是不同数据层，分别呈现，避免混合解读。</div></div>
+      <div class="grid-even">
+        <article class="card">
+          <div class="card-title"><div><h3>书架完成度</h3><p>基于 216 本书的 finishReading 标记</p></div></div>
+          <div class="completion-layout">
+            <div class="donut"><svg viewBox="0 0 120 120"><circle class="donut-bg" cx="60" cy="60" r="48"/><circle class="donut-fg" cx="60" cy="60" r="48" stroke-dasharray="13.9 287.7"/></svg><div class="donut-center"><strong>4.6%</strong><span>10 本已完成</span></div></div>
+            <div><div style="font-size:12px;color:var(--muted);margin-bottom:13px">有笔记的 55 本书 · 阅读进度分布</div><div class="progress-groups"><div class="progress-group"><span>80–100%</span><span class="progress-track"><i style="width:100%"></i></span><b>18</b></div><div class="progress-group"><span>30–79%</span><span class="progress-track"><i style="width:100%"></i></span><b>18</b></div><div class="progress-group"><span>1–29%</span><span class="progress-track"><i style="width:94%"></i></span><b>17</b></div><div class="progress-group"><span>0%</span><span class="progress-track"><i style="width:11%"></i></span><b>2</b></div></div><div class="coverage-note">另一口径：overall 汇总为累计读过 76 本、读完 11 本；与当前书架状态不可直接合并。</div></div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>笔记密度</h3><p>想法/点评 + 划线 + 书签</p></div></div>
+          <div class="note-total"><div><div class="big">3,103</div><div class="sub">55 本有笔记 · 2026 年贡献 82.4%</div></div><div style="flex:1;max-width:300px"><div class="note-composition"><i class="n1" style="width:16.1%"></i><i class="n2" style="width:83.7%"></i><i class="n3" style="width:.2%"></i></div><div class="note-legend"><span><i style="background:var(--green)"></i>点评/想法 500</span><span><i style="background:var(--lime)"></i>划线 2,598</span><span><i style="background:var(--amber)"></i>书签 5</span></div></div></div>
+          <div class="note-books">
+            <div class="note-book"><span class="rank">01</span><span class="book-name"><strong>高频笔记书目 A</strong><span>书名与作者已移除</span></span><span class="note-count">471 条</span></div>
+            <div class="note-book"><span class="rank">02</span><span class="book-name"><strong>高频笔记书目 B</strong><span>书名与作者已移除</span></span><span class="note-count">349 条</span></div>
+            <div class="note-book"><span class="rank">03</span><span class="book-name"><strong>高频笔记书目 C</strong><span>书名与作者已移除</span></span><span class="note-count">244 条</span></div>
+            <div class="note-book"><span class="rank">04</span><span class="book-name"><strong>高频笔记书目 D</strong><span>书名与作者已移除</span></span><span class="note-count">238 条</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="recent">
+      <div class="section-head"><div><div class="section-kicker">Now Reading</div><h2>最近阅读</h2></div><div class="section-note">按最近阅读时间排序；官方文档口径的累计阅读时长字段当前均为 0，因此不展示未定义的时长字段。</div></div>
+      <article class="card">
+        <div class="recent-list">
+          <div class="recent-item"><div class="book-cover cover-1"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 A</h4><p>书名与作者已移除 · 社会文化 / 社科</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>4%</strong></div><div class="track"><i style="width:4%"></i></div></div><div class="recent-time">时长未记录<br>9 月 5 日</div></div>
+          <div class="recent-item"><div class="book-cover cover-2"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 B</h4><p>书名与作者已移除 · 文学 / 文学鉴赏</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>3%</strong></div><div class="track"><i style="width:3%"></i></div></div><div class="recent-time">时长未记录<br>9 月 5 日</div></div>
+          <div class="recent-item"><div class="book-cover cover-3"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 C</h4><p>书名与作者已移除 · 精品小说 / 年代小说</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>1%</strong></div><div class="track"><i style="width:1%"></i></div></div><div class="recent-time">时长未记录<br>9 月 4 日</div></div>
+          <div class="recent-item"><div class="book-cover cover-4"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 D</h4><p>书名与作者已移除 · 政治军事 / 政治</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>48%</strong></div><div class="track"><i style="width:48%"></i></div></div><div class="recent-time">时长未记录<br>9 月 4 日</div></div>
+          <div class="recent-item"><div class="book-cover cover-5"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 E</h4><p>书名与作者已移除 · 哲学宗教 / 美学</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>0%</strong></div><div class="track"><i style="width:1px"></i></div></div><div class="recent-time">时长未记录<br>9 月 3 日</div></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" id="portrait">
+      <div class="section-head"><div><div class="section-kicker">Portrait</div><h2>阅读画像结论</h2></div><div class="section-note">以下是行为数据的归纳，不等同于对真实能力、价值观或专业水平的判断。</div></div>
+      <div class="insight-grid">
+        <article class="insight-card"><div class="insight-no">01 / DEEP DIVER</div><h3>主题式深潜，正在成为主线。</h3><p>2026 年个人成长、心理、文学三类合计 66.4 小时，占年度总时长约 59%。投入集中度明显，但题材仍保持横向延伸。</p><i class="spark"></i></article>
+        <article class="insight-card"><div class="insight-no">02 / ACTIVE READER</div><h3>阅读不只在“读”，还在持续加工。</h3><p>3,103 条笔记覆盖 55 本书；头部 5 本贡献 49.0% 的笔记。你更容易围绕少数核心书目建立密集的思考痕迹。</p><i class="spark"></i></article>
+        <article class="insight-card"><div class="insight-no">03 / OPEN LOOPS</div><h3>收藏很广，收束机制仍有空间。</h3><p>216 本书中仅 10 本被标记完成；这不是阅读质量判断，只说明书架与完读之间存在较大的开放回路。</p><i class="spark"></i></article>
+      </div>
+    </section>
+
+    <section class="section" id="gaps">
+      <div class="section-head"><div><div class="section-kicker">Coverage</div><h2>待提升领域</h2></div><div class="section-note">这里使用“阅读覆盖不足”描述数据现象，不据此推断你的真实能力。</div></div>
+      <div class="grid-even">
+        <article class="card">
+          <div class="card-title"><div><h3>阅读覆盖不足</h3><p>当前年度偏好分类榜未覆盖，且书架储备较少</p></div></div>
+          <div class="gap-list">
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19h14M7 16V5h10v11M9 9h6M9 13h3"/></svg></span><div><h4>定量方法 / 研究设计</h4><p>未见数学或统计一级标签 · 建议补齐概率、因果与数据解释</p></div><span class="gap-tag">P0</span></div>
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg></span><div><h4>科学技术 / 计算机</h4><p>书架合计 9 本 · 2026 偏好分类榜未出现</p></div><span class="gap-tag">P0</span></div>
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 7h14M7 7l-3 6h6L7 7Zm10 0-3 6h6l-3-6ZM8 21h8"/></svg></span><div><h4>法律 / 制度与公共政策</h4><p>已有政治阅读，但未见法律一级标签 · 适合补规则与政策评估</p></div><span class="gap-tag">P1</span></div>
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19h14M7 16V8l5-4 5 4v8M10 16v-5h4v5"/></svg></span><div><h4>医学健康 / 生命科学</h4><p>书架 1 本 · 2026 偏好分类榜未出现</p></div><span class="gap-tag">P1</span></div>
+          </div>
+          <div class="coverage-note">“未出现”仅表示没有进入源数据返回的年度偏好分类列表，不等同于阅读时长为零。</div>
+        </article>
+        <article class="card">
+          <div class="card-title"><div><h3>结构性机会</h3><p>从现有阅读行为出发的优化方向</p></div></div>
+          <div class="gap-list">
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5v14"/></svg></span><div><h4>为“轻覆盖”设一个固定配额</h4><p>每月选择 1 本非优势分类书目，保持题材通风。</p></div><span class="gap-tag" style="color:var(--green);background:rgba(62,141,114,.1)">拓宽</span></div>
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg></span><div><h4>给开放回路设上限</h4><p>同时在读不超过 5 本；新增前先完成或主动放弃 1 本。</p></div><span class="gap-tag" style="color:var(--green);background:rgba(62,141,114,.1)">收束</span></div>
+            <div class="gap-item"><span class="gap-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5h14v14H5zM8 9h8M8 13h8M8 17h4"/></svg></span><div><h4>把笔记变成可复用输出</h4><p>每完成 30 条新笔记，合成 1 张主题卡片或一页摘要。</p></div><span class="gap-tag" style="color:var(--green);background:rgba(62,141,114,.1)">转化</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="plan">
+      <div class="plan">
+        <div class="plan-head"><div><div class="section-kicker" style="color:var(--lime)">90-Day Plan</div><h2>把下一季，读成一个闭环。</h2></div><p>目标不是追求更大的数字，而是保留你的深度优势，同时提高收束率与跨主题连接。</p></div>
+        <div class="plan-phases">
+          <article class="phase"><div class="phase-label">DAY 01—30 · 收束</div><h3>减少切换，选定主线</h3><ul><li>从在读书目中选 3 本主线书 + 1 本轻阅读</li><li>每周安排 4 次、每次 35 分钟的深读时段</li><li>新书先进入“候选区”，本阶段不直接开读</li></ul><div class="phase-goal">阶段信号：<strong>完成或主动放弃 2 本</strong></div></article>
+          <article class="phase"><div class="phase-label">DAY 31—60 · 连接</div><h3>跨过阅读覆盖不足</h3><ul><li>在定量方法、科学技术或法律制度中选 1 条主线</li><li>采用“入门框架 + 方法材料 + 小练习”三件套</li><li>每周把 10 条旧笔记归并为 1 张跨主题卡</li></ul><div class="phase-goal">阶段信号：<strong>形成 4 张跨书主题卡</strong></div></article>
+          <article class="phase"><div class="phase-label">DAY 61—90 · 输出</div><h3>让笔记成为作品</h3><ul><li>从高密度笔记书目中挑选 1 个核心命题</li><li>整理观点—证据—反例三栏结构</li><li>完成一篇 1,500 字短文或 10 分钟分享</li></ul><div class="phase-goal">阶段信号：<strong>1 个可分享成果 + 4 本闭环</strong></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <div class="section-head"><div><div class="section-kicker">Methodology</div><h2>数据口径说明</h2></div><div class="section-note">保留可复核性，也明确数据本身的边界。</div></div>
+      <div class="method-grid">
+        <article class="method"><strong>总书架 · 217 项</strong><p>books 216 + albums 0 + 存在 mp 计 1。archive 不计入总书架。</p></article>
+        <article class="method"><strong>时长 · 秒转小时</strong><p>所有展示时长均取源字段秒数 ÷ 3,600；小数通常保留 1 位。</p></article>
+        <article class="method"><strong>笔记 · 3,103 条</strong><p>逐书 reviewCount 500 + noteCount 2,598 + bookmarkCount 5。</p></article>
+        <article class="method"><strong>完成 · 两套口径</strong><p>当前书架 finishReading 为 10/216；overall 汇总为读过 76、读完 11。</p></article>
+        <article class="method"><strong>年度 · 进行中</strong><p>2026 年数据截至 9 月 5 日；与完整年度对比时已明确标注。</p></article>
+        <article class="method"><strong>分类 · 两种视角</strong><p>书架气泡按持有书目数量；年度条形按当年阅读时长，口径不同。</p></article>
+        <article class="method"><strong>画像 · 行为归纳</strong><p>结论仅描述数据中可见的阅读行为，不推断真实能力或价值观。</p></article>
+        <article class="method"><strong>隐私 · 公开去书名版</strong><p>书名、作者和私密条目数量已从本文件源码中移除；仅保留聚合分析。</p></article>
+      </div>
+    </section>
+
+    <footer><span>微信读书个人阅读分析 · 离线单文件</span><span>数据抓取时间：2026-09-05 12:11（Asia/Shanghai） · 分析仅供个人复盘</span></footer>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const $ = (s, root = document) => root.querySelector(s);
+      const yearData = [
+        {year:'2020',hours:2.6},{year:'2021',hours:3.7},{year:'2022',hours:19.2},
+        {year:'2023',hours:23.2},{year:'2024',hours:10.4},{year:'2025',hours:42.9},{year:'2026',hours:111.8}
+      ];
+      const monthData = [12.9,14.2,26.7,23.0,13.2,4.2,13.2,4.3,0.05,0,0,0];
+
+      function renderYearChart() {
+        const host = $('#yearChart');
+        const W = 760, H = 265, p = {l:38,r:14,t:18,b:34};
+        const max = 120;
+        const x = i => p.l + i * ((W-p.l-p.r)/(yearData.length-1));
+        const y = v => p.t + (max-v)/max * (H-p.t-p.b);
+        const pts = yearData.map((d,i)=>[x(i),y(d.hours)]);
+        const line = pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ');
+        const area = line + ` L ${pts[pts.length-1][0]},${H-p.b} L ${pts[0][0]},${H-p.b} Z`;
+        const grid = [0,30,60,90,120].map(v=>`<line class="chart-grid" x1="${p.l}" x2="${W-p.r}" y1="${y(v)}" y2="${y(v)}"/><text class="chart-label" x="${p.l-8}" y="${y(v)+3}" text-anchor="end">${v}</text>`).join('');
+        const labels = yearData.map((d,i)=>`<text class="chart-label" x="${x(i)}" y="${H-9}" text-anchor="middle">${d.year}</text>`).join('');
+        const points = yearData.map((d,i)=>`<circle class="chart-point ${i===yearData.length-1?'is-active':''}" cx="${x(i)}" cy="${y(d.hours)}" r="4.5" data-i="${i}" tabindex="0"><title>${d.year}：${d.hours} 小时</title></circle>`).join('');
+        host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="2020 年 2.6 小时，2021 年 3.7 小时，2022 年 19.2 小时，2023 年 23.2 小时，2024 年 10.4 小时，2025 年 42.9 小时，2026 年 111.8 小时"><defs><linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3e8d72" stop-opacity=".27"/><stop offset="1" stop-color="#3e8d72" stop-opacity="0"/></linearGradient></defs>${grid}<path class="chart-area" d="${area}"/><path class="chart-line" d="${line}"/>${points}${labels}</svg><div class="chart-tip" role="status"></div>`;
+        const tip = $('.chart-tip', host);
+        host.querySelectorAll('.chart-point').forEach(point => {
+          const show = () => { const d=yearData[+point.dataset.i]; const box=host.getBoundingClientRect(); const svg=host.querySelector('svg').getBoundingClientRect(); tip.textContent=`${d.year} · ${d.hours} 小时`; tip.style.left=`${(parseFloat(point.getAttribute('cx'))/W)*svg.width + (svg.left-box.left)}px`; tip.style.top=`${(parseFloat(point.getAttribute('cy'))/H)*svg.height}px`; tip.classList.add('show'); };
+          point.addEventListener('mouseenter',show); point.addEventListener('focus',show); point.addEventListener('mouseleave',()=>tip.classList.remove('show')); point.addEventListener('blur',()=>tip.classList.remove('show'));
+        });
+      }
+
+      function renderMonths() {
+        const host = $('#monthBars'); const max = Math.max(...monthData);
+        host.innerHTML = monthData.map((v,i)=>{
+          const future=i>8, peak=v===max;
+          const h=future?8:Math.max(2,Math.round(v/max*142));
+          const label=future?'尚未发生':`${v<.1?'0.05':v.toFixed(1)} 小时`;
+          return `<div class="month-col" title="${i+1} 月 · ${label}"><div class="fill ${peak?'peak':''} ${future?'future':''}" style="height:${h}px"></div><span>${i+1}月</span></div>`;
+        }).join('');
+      }
+
+      function setPrivacy(isPrivate) {
+        document.body.classList.toggle('private', isPrivate);
+        const btn=$('#privacyToggle'); btn.setAttribute('aria-pressed', String(isPrivate));
+        btn.setAttribute('aria-label', isPrivate?'显示全部书名和作者':'隐藏全部书名和作者');
+        $('#eyeIcon').innerHTML = isPrivate
+          ? '<path d="m3 3 18 18M10.6 10.7a2.2 2.2 0 0 0 2.8 2.8M9.5 5.6A10.6 10.6 0 0 1 12 5c6 0 9.2 7 9.2 7a16 16 0 0 1-2.2 3.1M6.2 6.2C3.9 8 2.8 12 2.8 12s3.2 7 9.2 7a9 9 0 0 0 3.1-.6"/>'
+          : '<path d="M2.8 12s3.3-6 9.2-6 9.2 6 9.2 6-3.3 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.7"/>';
+        try { localStorage.setItem('reading-dashboard-private', isPrivate?'1':'0'); } catch (_) {}
+      }
+
+      renderYearChart(); renderMonths();
+      let initial=false; try{initial=localStorage.getItem('reading-dashboard-private')==='1'}catch(_){}
+      setPrivacy(initial);
+      $('#privacyToggle').addEventListener('click',()=>setPrivacy(!document.body.classList.contains('private')));
+      $('#printButton').addEventListener('click',()=>window.print());
+    })();
+  </script>
+</body>
+</html>
