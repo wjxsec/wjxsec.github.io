@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f4f1ea">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="referrer" content="no-referrer">
   <title>我的阅读脉络｜微信读书个人分析</title>
   <meta name="description" content="基于微信读书个人数据生成的离线阅读分析面板。">
   <link rel="canonical" href="https://wjxsec.github.io/reading/">
@@ -407,7 +409,7 @@
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.7c2.8-.7 5.4-.1 8 1.8v11c-2.6-1.9-5.2-2.5-8-1.8z"/><path d="M20 5.7c-2.8-.7-5.4-.1-8 1.8v11c2.6-1.9 5.2-2.5 8-1.8z"/></svg>
         </span>
-        <div class="brand-name">阅读脉络 <span class="brand-meta">数据截至 2026.09.05</span></div>
+        <div class="brand-name">阅读脉络 <span class="brand-meta">数据快照 · 2026.09</span></div>
       </div>
       <nav class="nav" aria-label="页面导航">
         <a href="#overview">总览</a><a href="#trend">趋势</a><a href="#rhythm">节律</a><a href="#map">知识地图</a><a href="#depth">深度</a><a href="#gaps">提升</a><a href="#plan">行动方案</a>
@@ -431,7 +433,7 @@
         <h1>你正在把阅读，<br>变成一张<span style="color:var(--green)">思考地图</span>。</h1>
         <p class="hero-copy">今年的阅读投入已经来到 <strong>111.8 小时</strong>，是去年全年的 2.6 倍。偏好从心理逐渐扩展到个人成长、文学与社会观察，阅读正在从“广泛收藏”走向“主题式深潜”。</p>
         <div class="hero-bottom">
-          <span class="pulse-note"><i class="pulse-dot"></i>公开版 · 已从源码移除书名与作者</span>
+          <span class="pulse-note"><i class="pulse-dot"></i>最小公开版 · 已移除逐书与近期行为数据</span>
           <span class="pulse-note">累计阅读 538 天</span>
         </div>
       </div>
@@ -461,7 +463,7 @@
     </section>
 
     <section class="section" id="trend">
-      <div class="section-head"><div><div class="section-kicker">Momentum</div><h2>年度 / 月度趋势</h2></div><div class="section-note">时长统一由秒换算为小时；2026 年为截至 9 月 5 日的进行中数据。</div></div>
+      <div class="section-head"><div><div class="section-kicker">Momentum</div><h2>年度 / 月度趋势</h2></div><div class="section-note">时长统一由秒换算为小时；2026 年为截至 9 月初的进行中数据。</div></div>
       <div class="grid-2">
         <article class="card">
           <div class="card-title"><div><h3>年度阅读时长</h3><p>2020—2026 · 小时</p></div><div class="segmented" aria-label="趋势指标"><button class="active" type="button">时长</button><button type="button" disabled title="当前仅展示时长">阅读日</button></div></div>
@@ -479,13 +481,13 @@
         </aside>
       </div>
       <div class="card" style="margin-top:16px">
-        <div class="card-title"><div><h3>2026 月度节奏</h3><p>3 月与 4 月形成高峰；9 月为截至 5 日，10—12 月尚未发生</p></div><div style="font-size:12px;color:var(--muted)">峰值月 <strong style="color:var(--green)">3 月 · 26.7h</strong></div></div>
+        <div class="card-title"><div><h3>2026 月度节奏</h3><p>3 月与 4 月形成高峰；9 月为月初进行中数据，10—12 月尚未发生</p></div><div style="font-size:12px;color:var(--muted)">峰值月 <strong style="color:var(--green)">3 月 · 26.7h</strong></div></div>
         <div class="monthly-bars" id="monthBars" aria-label="2026 每月阅读时长柱状图"></div>
       </div>
     </section>
 
     <section class="section" id="rhythm">
-      <div class="section-head"><div><div class="section-kicker">Rhythm</div><h2>阅读节律</h2></div><div class="section-note">时段数组按 06:00 至次日 05:00 排列；峰值依据源数据计算。</div></div>
+      <div class="section-head"><div><div class="section-kicker">Rhythm</div><h2>阅读节律</h2></div><div class="section-note">公开版仅保留概括性时段偏好，不展示精确行为峰值。</div></div>
       <div class="grid-even">
         <article class="card dark">
           <div class="rhythm-layout">
@@ -494,7 +496,7 @@
               <div class="clock-center"><div><strong>午后 → 夜晚</strong><span>偏好阅读时段</span></div></div>
               <span class="clock-label top">00:00</span><span class="clock-label right">06:00</span><span class="clock-label bottom">12:00</span><span class="clock-label left">18:00</span>
             </div>
-            <div class="rhythm-copy"><h3>你的专注，更容易在后半天展开。</h3><p>把重阅读安排在午后或夜晚，把晨间留给回顾与整理，更贴合已有节律。</p><div class="rhythm-metrics"><div class="rhythm-metric"><strong>12:00</strong><span>午间阅读峰值</span></div><div class="rhythm-metric"><strong>23:00</strong><span>夜间阅读峰值</span></div></div></div>
+            <div class="rhythm-copy"><h3>你的专注，更容易在后半天展开。</h3><p>把重阅读安排在午后或夜晚，把晨间留给回顾与整理，更贴合已有节律。</p><div class="rhythm-metrics"><div class="rhythm-metric"><strong>午后</strong><span>适合主题深读</span></div><div class="rhythm-metric"><strong>夜间</strong><span>适合持续阅读</span></div></div></div>
           </div>
         </article>
         <article class="card">
@@ -548,27 +550,9 @@
         <article class="card">
           <div class="card-title"><div><h3>笔记密度</h3><p>想法/点评 + 划线 + 书签</p></div></div>
           <div class="note-total"><div><div class="big">3,103</div><div class="sub">55 本有笔记 · 2026 年贡献 82.4%</div></div><div style="flex:1;max-width:300px"><div class="note-composition"><i class="n1" style="width:16.1%"></i><i class="n2" style="width:83.7%"></i><i class="n3" style="width:.2%"></i></div><div class="note-legend"><span><i style="background:var(--green)"></i>点评/想法 500</span><span><i style="background:var(--lime)"></i>划线 2,598</span><span><i style="background:var(--amber)"></i>书签 5</span></div></div></div>
-          <div class="note-books">
-            <div class="note-book"><span class="rank">01</span><span class="book-name"><strong>高频笔记书目 A</strong><span>书名与作者已移除</span></span><span class="note-count">471 条</span></div>
-            <div class="note-book"><span class="rank">02</span><span class="book-name"><strong>高频笔记书目 B</strong><span>书名与作者已移除</span></span><span class="note-count">349 条</span></div>
-            <div class="note-book"><span class="rank">03</span><span class="book-name"><strong>高频笔记书目 C</strong><span>书名与作者已移除</span></span><span class="note-count">244 条</span></div>
-            <div class="note-book"><span class="rank">04</span><span class="book-name"><strong>高频笔记书目 D</strong><span>书名与作者已移除</span></span><span class="note-count">238 条</span></div>
-          </div>
+          <div class="coverage-note">最小公开版不展示逐书笔记排行与单本笔记数量。</div>
         </article>
       </div>
-    </section>
-
-    <section class="section" id="recent">
-      <div class="section-head"><div><div class="section-kicker">Now Reading</div><h2>最近阅读</h2></div><div class="section-note">按最近阅读时间排序；官方文档口径的累计阅读时长字段当前均为 0，因此不展示未定义的时长字段。</div></div>
-      <article class="card">
-        <div class="recent-list">
-          <div class="recent-item"><div class="book-cover cover-1"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 A</h4><p>书名与作者已移除 · 社会文化 / 社科</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>4%</strong></div><div class="track"><i style="width:4%"></i></div></div><div class="recent-time">时长未记录<br>9 月 5 日</div></div>
-          <div class="recent-item"><div class="book-cover cover-2"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 B</h4><p>书名与作者已移除 · 文学 / 文学鉴赏</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>3%</strong></div><div class="track"><i style="width:3%"></i></div></div><div class="recent-time">时长未记录<br>9 月 5 日</div></div>
-          <div class="recent-item"><div class="book-cover cover-3"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 C</h4><p>书名与作者已移除 · 精品小说 / 年代小说</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>1%</strong></div><div class="track"><i style="width:1%"></i></div></div><div class="recent-time">时长未记录<br>9 月 4 日</div></div>
-          <div class="recent-item"><div class="book-cover cover-4"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 D</h4><p>书名与作者已移除 · 政治军事 / 政治</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>48%</strong></div><div class="track"><i style="width:48%"></i></div></div><div class="recent-time">时长未记录<br>9 月 4 日</div></div>
-          <div class="recent-item"><div class="book-cover cover-5"><span>书</span></div><div class="recent-main"><h4>近期阅读书目 E</h4><p>书名与作者已移除 · 哲学宗教 / 美学</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>0%</strong></div><div class="track"><i style="width:1px"></i></div></div><div class="recent-time">时长未记录<br>9 月 3 日</div></div>
-        </div>
-      </article>
     </section>
 
     <section class="section" id="portrait">
@@ -622,14 +606,14 @@
         <article class="method"><strong>时长 · 秒转小时</strong><p>所有展示时长均取源字段秒数 ÷ 3,600；小数通常保留 1 位。</p></article>
         <article class="method"><strong>笔记 · 3,103 条</strong><p>逐书 reviewCount 500 + noteCount 2,598 + bookmarkCount 5。</p></article>
         <article class="method"><strong>完成 · 两套口径</strong><p>当前书架 finishReading 为 10/216；overall 汇总为读过 76、读完 11。</p></article>
-        <article class="method"><strong>年度 · 进行中</strong><p>2026 年数据截至 9 月 5 日；与完整年度对比时已明确标注。</p></article>
+        <article class="method"><strong>年度 · 进行中</strong><p>2026 年数据截至 9 月初；与完整年度对比时已明确标注。</p></article>
         <article class="method"><strong>分类 · 两种视角</strong><p>书架气泡按持有书目数量；年度条形按当年阅读时长，口径不同。</p></article>
         <article class="method"><strong>画像 · 行为归纳</strong><p>结论仅描述数据中可见的阅读行为，不推断真实能力或价值观。</p></article>
-        <article class="method"><strong>隐私 · 公开去书名版</strong><p>书名、作者和私密条目数量已从本文件源码中移除；仅保留聚合分析。</p></article>
+        <article class="method"><strong>隐私 · 最小公开版</strong><p>书名、作者、私密数量、逐书笔记排行及近期行为数据已从源码中移除。</p></article>
       </div>
     </section>
 
-    <footer><span>微信读书个人阅读分析 · 离线单文件</span><span>数据抓取时间：2026-09-05 12:11（Asia/Shanghai） · 分析仅供个人复盘</span></footer>
+    <footer><span>微信读书个人阅读分析 · 离线单文件</span><span>数据快照：2026 年 9 月 · 分析仅供个人复盘</span></footer>
   </main>
 
   <script>
