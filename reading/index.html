@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
   <meta name="referrer" content="no-referrer">
   <title>我的阅读脉络｜微信读书个人分析</title>
-  <meta name="description" content="基于微信读书个人数据生成的离线阅读分析面板。">
+  <meta name="description" content="基于微信读书聚合数据与公开书架条目生成的个人阅读分析面板。">
   <link rel="canonical" href="https://wjxsec.github.io/reading/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="zh_CN">
@@ -362,7 +362,6 @@
     .private .dark .sensitive, .private .plan .sensitive { text-shadow:0 0 9px rgba(255,255,255,.55); }
     .private .book-cover span { visibility:hidden; }
     .private .book-cover::before { left:4px; }
-    .public-safe #privacyToggle { display:none; }
     .private .privacy-label::after { content:"已隐藏"; }
     .privacy-label::after { content:"隐藏书名"; }
     .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
@@ -402,7 +401,7 @@
     @media (max-width:430px){.kpis{grid-template-columns:1fr 1fr}.kpi{padding:14px}.kpi-head span:first-child{font-size:11px}.kpi-icon{display:none}.kpi-value{font-size:25px}.hero{padding:22px}h1{font-size:35px}.map-box{transform:scale(.78);margin-left:-30px;margin-right:-30px;margin-bottom:-70px}.method-grid{grid-template-columns:1fr}.top-actions{gap:5px}}
   </style>
 </head>
-<body class="public-safe">
+<body>
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand" aria-label="阅读分析面板">
@@ -415,7 +414,7 @@
         <a href="#overview">总览</a><a href="#trend">趋势</a><a href="#rhythm">节律</a><a href="#map">知识地图</a><a href="#depth">深度</a><a href="#gaps">提升</a><a href="#plan">行动方案</a>
       </nav>
       <div class="top-actions">
-        <button class="icon-button" id="privacyToggle" type="button" aria-pressed="false" aria-label="隐藏全部书名和作者">
+        <button class="icon-button" id="privacyToggle" type="button" aria-pressed="false" aria-label="隐藏公开书名和作者">
           <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.8 12s3.3-6 9.2-6 9.2 6 9.2 6-3.3 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
           <span class="btn-text privacy-label"></span>
         </button>
@@ -433,7 +432,7 @@
         <h1>你正在把阅读，<br>变成一张<span style="color:var(--green)">思考地图</span>。</h1>
         <p class="hero-copy">今年的阅读投入已经来到 <strong>111.8 小时</strong>，是去年全年的 2.6 倍。偏好从心理逐渐扩展到个人成长、文学与社会观察，阅读正在从“广泛收藏”走向“主题式深潜”。</p>
         <div class="hero-bottom">
-          <span class="pulse-note"><i class="pulse-dot"></i>最小公开版 · 已移除逐书与近期行为数据</span>
+          <span class="pulse-note"><i class="pulse-dot"></i>平衡公开版 · 私密书名与原始数据不公开</span>
           <span class="pulse-note">累计阅读 538 天</span>
         </div>
       </div>
@@ -456,7 +455,7 @@
     </section>
 
     <section class="kpis" aria-label="核心指标">
-      <article class="kpi"><div class="kpi-head"><span>总书架</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.7c2.8-.7 5.4-.1 8 1.8v11c-2.6-1.9-5.2-2.5-8-1.8z"/><path d="M20 5.7c-2.8-.7-5.4-.1-8 1.8v11c2.6-1.9 5.2-2.5 8-1.8z"/></svg></span></div><div class="kpi-value">217<span class="kpi-unit">项</span></div><div class="kpi-foot">216 本书 · 0 专辑 · 1 个文章收藏入口</div></article>
+      <article class="kpi"><div class="kpi-head"><span>总书架</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.7c2.8-.7 5.4-.1 8 1.8v11c-2.6-1.9-5.2-2.5-8-1.8z"/><path d="M20 5.7c-2.8-.7-5.4-.1-8 1.8v11c2.6-1.9 5.2-2.5 8-1.8z"/></svg></span></div><div class="kpi-value">217<span class="kpi-unit">项</span></div><div class="kpi-foot">216 本书 · 0 专辑 · 1 个文章收藏入口 · 私密 43</div></article>
       <article class="kpi"><div class="kpi-head"><span>2026 阅读</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div><div class="kpi-value">111.8<span class="kpi-unit">小时</span></div><div class="kpi-foot"><strong>↑ 160.9%</strong> 对比 2025 全年</div></article>
       <article class="kpi"><div class="kpi-head"><span>笔记总数</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg></span></div><div class="kpi-value">3,103<span class="kpi-unit">条</span></div><div class="kpi-foot">覆盖 55 本书 · 平均 56.4 条/本</div></article>
       <article class="kpi"><div class="kpi-head"><span>今年阅读日</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v14H4zM8 3v6M16 3v6M4 10h16"/></svg></span></div><div class="kpi-value">146<span class="kpi-unit">天</span></div><div class="kpi-foot">活跃日均 45.9 分钟</div></article>
@@ -550,9 +549,27 @@
         <article class="card">
           <div class="card-title"><div><h3>笔记密度</h3><p>想法/点评 + 划线 + 书签</p></div></div>
           <div class="note-total"><div><div class="big">3,103</div><div class="sub">55 本有笔记 · 2026 年贡献 82.4%</div></div><div style="flex:1;max-width:300px"><div class="note-composition"><i class="n1" style="width:16.1%"></i><i class="n2" style="width:83.7%"></i><i class="n3" style="width:.2%"></i></div><div class="note-legend"><span><i style="background:var(--green)"></i>点评/想法 500</span><span><i style="background:var(--lime)"></i>划线 2,598</span><span><i style="background:var(--amber)"></i>书签 5</span></div></div></div>
-          <div class="coverage-note">最小公开版不展示逐书笔记排行与单本笔记数量。</div>
+          <div class="note-books">
+            <div class="note-book"><span class="rank">01</span><span class="book-name"><strong class="sensitive">掌控习惯（新版）</strong><span class="sensitive">詹姆斯·克利尔</span></span><span class="note-count">471 条</span></div>
+            <div class="note-book"><span class="rank">02</span><span class="book-name"><strong class="sensitive">影响力（全新升级版）</strong><span class="sensitive">罗伯特·西奥迪尼</span></span><span class="note-count">349 条</span></div>
+            <div class="note-book"><span class="rank">03</span><span class="book-name"><strong class="sensitive">沉思录</strong><span class="sensitive">马可·奥勒留</span></span><span class="note-count">244 条</span></div>
+            <div class="note-book"><span class="rank">04</span><span class="book-name"><strong>私密书目（未公开）</strong><span>作者未公开</span></span><span class="note-count">238 条</span></div>
+          </div>
         </article>
       </div>
+    </section>
+
+    <section class="section" id="recent">
+      <div class="section-head"><div><div class="section-kicker">Now Reading</div><h2>最近阅读</h2></div><div class="section-note">按最近阅读顺序展示公开书目与进度；精确日期和未定义的时长字段不公开。</div></div>
+      <article class="card">
+        <div class="recent-list">
+          <div class="recent-item"><div class="book-cover cover-1"><span>娱</span></div><div class="recent-main"><h4 class="sensitive">娱乐至死</h4><p><span class="sensitive">尼尔·波兹曼</span> · 社会文化 / 社科</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>4%</strong></div><div class="track"><i style="width:4%"></i></div></div><div class="recent-time">近期在读</div></div>
+          <div class="recent-item"><div class="book-cover cover-2"><span>词</span></div><div class="recent-main"><h4 class="sensitive">人间词话</h4><p><span class="sensitive">王国维</span> · 文学 / 文学鉴赏</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>3%</strong></div><div class="track"><i style="width:3%"></i></div></div><div class="recent-time">近期在读</div></div>
+          <div class="recent-item"><div class="book-cover cover-3"><span>万</span></div><div class="recent-main"><h4 class="sensitive">一句顶一万句（2022新版）</h4><p><span class="sensitive">刘震云</span> · 精品小说 / 年代小说</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>1%</strong></div><div class="track"><i style="width:1%"></i></div></div><div class="recent-time">近期在读</div></div>
+          <div class="recent-item"><div class="book-cover cover-4"><span>政</span></div><div class="recent-main"><h4 class="sensitive">独裁者手册</h4><p><span class="sensitive">布鲁斯·德·梅斯奎塔 等</span> · 政治军事 / 政治</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>48%</strong></div><div class="track"><i style="width:48%"></i></div></div><div class="recent-time">近期在读</div></div>
+          <div class="recent-item"><div class="book-cover cover-5"><span>美</span></div><div class="recent-main"><h4 class="sensitive">美学散步</h4><p><span class="sensitive">宗白华</span> · 哲学宗教 / 美学</p></div><div class="reading-progress"><div class="meta"><span>阅读进度</span><strong>0%</strong></div><div class="track"><i style="width:1px"></i></div></div><div class="recent-time">近期在读</div></div>
+        </div>
+      </article>
     </section>
 
     <section class="section" id="portrait">
@@ -609,7 +626,7 @@
         <article class="method"><strong>年度 · 进行中</strong><p>2026 年数据截至 9 月初；与完整年度对比时已明确标注。</p></article>
         <article class="method"><strong>分类 · 两种视角</strong><p>书架气泡按持有书目数量；年度条形按当年阅读时长，口径不同。</p></article>
         <article class="method"><strong>画像 · 行为归纳</strong><p>结论仅描述数据中可见的阅读行为，不推断真实能力或价值观。</p></article>
-        <article class="method"><strong>隐私 · 最小公开版</strong><p>书名、作者、私密数量、逐书笔记排行及近期行为数据已从源码中移除。</p></article>
+        <article class="method"><strong>隐私 · 平衡公开版</strong><p>公开 8 本公开书目的名称与作者、私密条目总数；唯一私密书名、精确日期、笔记正文和完整书架不公开。</p></article>
       </div>
     </section>
 
@@ -659,7 +676,7 @@
       function setPrivacy(isPrivate) {
         document.body.classList.toggle('private', isPrivate);
         const btn=$('#privacyToggle'); btn.setAttribute('aria-pressed', String(isPrivate));
-        btn.setAttribute('aria-label', isPrivate?'显示全部书名和作者':'隐藏全部书名和作者');
+        btn.setAttribute('aria-label', isPrivate?'显示公开书名和作者':'隐藏公开书名和作者');
         $('#eyeIcon').innerHTML = isPrivate
           ? '<path d="m3 3 18 18M10.6 10.7a2.2 2.2 0 0 0 2.8 2.8M9.5 5.6A10.6 10.6 0 0 1 12 5c6 0 9.2 7 9.2 7a16 16 0 0 1-2.2 3.1M6.2 6.2C3.9 8 2.8 12 2.8 12s3.2 7 9.2 7a9 9 0 0 0 3.1-.6"/>'
           : '<path d="M2.8 12s3.3-6 9.2-6 9.2 6 9.2 6-3.3 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.7"/>';
